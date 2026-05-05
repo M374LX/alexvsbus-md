@@ -774,8 +774,6 @@ check_pal:
 	rts
 
 .is_pal:
-	; TODO: display a message and allow pressing Start to continue
-
 	moveq   #0, d0
 	lea     VDP_DATA, a0
 
