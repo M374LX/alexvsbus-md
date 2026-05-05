@@ -1,0 +1,17 @@
+# Ignore the built ROM
+/alexvsbus.md
+
+# Ignore the built tools
+/tools/bgm-conv
+/tools/bgm-conv.exe
+/tools/fix-rom
+/tools/fix-rom.exe
+/tools/gen-sprite-constants
+/tools/gen-sprite-constants.exe
+/tools/level-conv
+/tools/level-conv.ext
+/tools/sprites-conv
+/tools/sprites-conv.exe
+/tools/tiles-conv
+/tools/tiles-conv.exe
+
