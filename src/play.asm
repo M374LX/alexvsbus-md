@@ -38,7 +38,7 @@ play_clear:
 	bset.b  #0, (RAM_play_flags).w ; Set "ignore user input" flag
 
 	move.b  #$90, (RAM_time).w
-	move.b  #45, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
 
 	; Set player initial position
 	move.w  #96,  (RAM_player_x).w
@@ -251,7 +251,7 @@ add_crack_particles:
 	; Particle #1
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #-16383, (a0)+
+	move.l  #-16384, (a0)+
 	move.l  #-131072, (a0)+
 
 	addi.w  #16, d3
@@ -273,7 +273,7 @@ add_crack_particles:
 	; Particle #3
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #16383, (a0)+
+	move.l  #16384, (a0)+
 	move.l  #-131072, (a0)+
 
 	addi.w  #16, d3
@@ -284,7 +284,7 @@ add_crack_particles:
 	; Particle #4
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #5553, (a0)+
+	move.l  #6553, (a0)+
 	move.l  #-209715, (a0)+
 
 	addq.b  #4, d2
@@ -654,7 +654,7 @@ move_objects:
 	beq.s   .next_pushable_crate
 
 	move.l  (a0), d0
-	addi.l  #73728, d0 ; TODO: correct PAL value
+	addi.l  #78643, d0 ; TODO: correct PAL value
 	move.l  d0, (a0)
 
 	; Discard fractional part of the X position
@@ -1281,7 +1281,7 @@ handle_solids:
 	cmpi.w  #SOL_PASSAGEWAY_EXIT, d0
 	bne.s   .not_leaving_passageway
 	move.l  (RAM_player_yvel).w, d0
-	cmpi.l  #-174762, d0 ; TODO: correct PAL value
+	cmpi.l  #-176947, d0 ; TODO: correct PAL value
 	bgt.s   .not_leaving_passageway
 	bra.s   .next_solid_y
 
@@ -1788,7 +1788,7 @@ handle_player_interactions:
 	move.b  d6, (RAM_grabbed_rope_obj).w
 	move.w  2(a2), (RAM_grabbed_rope_x).w
 	clr.w   (RAM_grabbed_rope_x+2).w
-	move.l  #279620, (RAM_grabbed_rope_xvel).w ; TODO: correct PAL value
+	move.l  #281804, (RAM_grabbed_rope_xvel).w ; TODO: correct PAL value
 
 	bra.s   .next_obj
 
@@ -1858,7 +1858,7 @@ handle_player_interactions:
 	move.b  (RAM_play_input_down).w, d0
 	btst.b  #PLAY_INPUT_RIGHT, (RAM_play_input_down).w
 	bne.s   .dont_reset_crate_push_remaining
-	move.b  #45, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
 .dont_reset_crate_push_remaining:
 
 	; Store the X and Y positions of the point used to check if the player
@@ -1892,7 +1892,7 @@ handle_player_interactions:
 	bgt.s   .next_pushable_crate
 
 	; Finished pushing the crate
-	move.b  #45, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
 	move.b  #6, 6(a0) ; Set crate's "pushed" and "moving" flags
 
 	move.w  #SFX_CRATE, d0
@@ -2826,7 +2826,7 @@ update_sequence:
 	clr.l   (RAM_camera_xvel).w
 	clr.l   (RAM_camera_yvel).w
 	bset.b  #2, (RAM_sequence_flags).w ; Wipe out screen
-	move.w  #36, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
@@ -2844,7 +2844,7 @@ update_sequence:
 	move.l  #NONE, (RAM_hen_x).w
 
 	bset.b  #1, (RAM_sequence_flags).w ; Wipe in screen
-	move.w  #36, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
@@ -3141,7 +3141,7 @@ update_sequence:
 	move.l  (RAM_bus_x).w, d0
 	sub.l   d0, 2(a0)
 
-	move.w  #15, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3154,7 +3154,7 @@ update_sequence:
 	btst.b  #1, (RAM_player_flags).w
 	beq     .ret
 
-	move.w  #15, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3273,7 +3273,7 @@ update_sequence:
 	clr.l   (a0)+
 	clr.l   (a0)
 
-	move.w  #15, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3295,7 +3295,7 @@ update_sequence:
 	bset.b  #0, (RAM_player_flags).w ; Set "visible" flag
 	clr.b   (RAM_cutscene_objs).w
 
-	move.w  #15, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3550,7 +3550,7 @@ update_sequence:
 
 	; Check if the player character's animation needs to be changed from
 	; "running" to "walking"
-	cmpi.l  #137625, 10(a0) ; TODO: correct PAL value
+	cmpi.l  #196608, 10(a0) ; TODO: correct PAL value
 	bgt.s   .seq_116_no_player_change
 	cmpi.b  #COBJ_PLAYER_WALK, (a0)
 	beq.s   .seq_116_no_player_change

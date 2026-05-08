@@ -72,7 +72,7 @@ DATA_player_anims:
 	; PLAYER_ANIM_SLIP
 	dc.b 0   ; Initial frame
 	dc.b 3   ; Last frame (number of frames minus one)
-	dc.w 6   ; Delay
+	dc.w 3   ; Delay
 	dc.b 1   ; Flags (running, no reverse, no loop)
 	dc.b 8   ; First frame within spritemap
 	dc.w 0   ; Padding
@@ -80,7 +80,7 @@ DATA_player_anims:
 	; PLAYER_ANIM_SLIPREV
 	dc.b 3   ; Initial frame
 	dc.b 3   ; Last frame (number of frames minus one)
-	dc.w 6   ; Delay
+	dc.w 3   ; Delay
 	dc.b 3   ; Flags (running, reverse, no loop)
 	dc.b 8   ; First frame within spritemap
 	dc.w 0   ; Padding
