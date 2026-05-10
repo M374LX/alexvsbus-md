@@ -253,8 +253,6 @@ PLAY_INPUT_LEFT:   equ 0
 PLAY_INPUT_RIGHT:  equ 1
 PLAY_INPUT_JUMP:   equ 2
 
-JUMP_TIMEOUT: equ 12 ; TODO: 10 for PAL
-
 ; Animations
 ANIM_SIZE_BYTES:       equ 8
 ANIM_PLAYER:           equ (0*ANIM_SIZE_BYTES)

@@ -118,7 +118,7 @@ RAM_score_add:                 equ $FFFF8F06
 
 ; RAM area that is cleared when starting a level
 RAM_play_clear_start:          equ $FFFF9000
-RAM_play_clear_end:            equ $FFFFA100
+RAM_play_clear_end:            equ $FFFF9DFF
 
 RAM_play_input_down:           equ $FFFF9000
 RAM_play_input_hit:            equ $FFFF9001
@@ -172,7 +172,7 @@ RAM_bus_stop_sign1_x:          equ $FFFF9044
 RAM_bus_stop_sign2_x:          equ $FFFF9046
 
 RAM_sequence_delay:            equ $FFFF9048
-RAM_sequence_step:             equ $FFFF904A
+RAM_sequence_step:             equ $FFFF9049
 
 ; The flags are:
 ; 0 - Skip initial sequence
@@ -181,7 +181,7 @@ RAM_sequence_step:             equ $FFFF904A
 ; 3 - Player character reached flagman
 ; 4 - Hen reached flagman
 ; 5 - Bus reached flagman
-RAM_sequence_flags:            equ $FFFF904B
+RAM_sequence_flags:            equ $FFFF904A
 
 RAM_camera_x:                  equ $FFFF9050
 RAM_camera_y:                  equ $FFFF9054
@@ -245,8 +245,8 @@ RAM_push_arrow_delay:          equ $FFFF90F8
 ;
 ; current frame (B)
 ; last frame (B)
-; delay (W)
-; maximum delay (W)
+; delay (B)
+; maximum delay (B)
 ; flags (B) - 0 = running, 1 = reverse, 2 = loop
 RAM_anims:                     equ $FFFF9100
 
@@ -324,3 +324,4 @@ RAM_pushable_crate_solids:     equ $FFFF9D00
 ; grav (L)
 RAM_cutscene_objs:             equ $FFFF9D40
 
+RAM_fpsvals:                   equ $FFFF9E00

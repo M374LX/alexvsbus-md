@@ -33,7 +33,7 @@ main:
 
 	bsr     sound_init
 	bsr     renderer_init
-	bsr     check_pal
+	bsr     load_fps_values
 	bsr     sram_load
 	bsr     show_title
 
@@ -120,7 +120,7 @@ handle_menu_action:
 
 .play:
 	move.b  #DELACT_START_PLAY, (RAM_delayed_action_type).w
-	move.b  #45, (RAM_action_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_7_S).w, (RAM_action_delay).w
 	rts
 
 .resume:
@@ -264,7 +264,7 @@ handle_level_end:
 	move.b  #DELACT_TITLE, (RAM_delayed_action_type).w
 .final_score_not_last_difficulty:
 
-	move.b  #240, (RAM_action_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_4_S).w, (RAM_action_delay).w
 
 	; Remove screen wipe
 	move.b  #WIPECMD_CLEAR, (RAM_wipe_cmd).w
@@ -579,7 +579,7 @@ start_ending_sequence:
 	move.w  #((480*8)-SCREEN_W), (RAM_camera_xmax).w
 
 	move.b  #SEQ_ENDING, (RAM_sequence_step).w
-	clr.w   (RAM_sequence_delay).w
+	clr.b   (RAM_sequence_delay).w
 
 	; Wipe in screen
 	move.b  #WIPECMD_IN, (RAM_wipe_cmd).w
@@ -766,82 +766,21 @@ sram_load:
 
 ; ------------------------------------------------------------------------------
 
-; This temporary subroutine will be removed when PAL supported is added
-check_pal:
+; Load the values that depend on the frame rate (60 or 50 Hz) into RAM:
+; time delays, velocities, and accelerations
+load_fps_values:
+	lea     DATA_fps_values_ntsc, a0
 	move.b  $A10001, d0
 	btst.l  #6, d0
-	bne.s   .is_pal
-	rts
+	beq.s   .not_pal
+	lea     DATA_fps_values_pal, a0
+.not_pal:
 
-.is_pal:
-	moveq   #0, d0
-	lea     VDP_DATA, a0
-
-	; Set colors
-	move.l  #$C0000000, 4(a0)
-	move.w  #$000, (a0)
-	move.w  #$EEE, (a0)
-	move.w  #$000, (a0)
-
-	lea     .pal_text_1, a1
-	move.w  #$6124, d1
-	bsr     pal_display_text
-
-	lea     .pal_text_2, a1
-	move.w  #$6404, d1
-	bsr     pal_display_text
-
-	lea     .pal_text_3, a1
-	move.w  #$6B10, d1
-	bsr     pal_display_text
-
-	; Enable display
-	move.w  #$8164, 4(a0)
-
-.wait_start:
-	bsr     joypad_update
-	bsr     wait_vblank
-
-	move.w  (RAM_joystate_hit).w, d0
-	btst.l  #7, d0
-	beq.s   .wait_start
+	lea     (RAM_fpsvals).w, a1
+	move.w  #FPSVALS_SIZE-1, d7
+.values_load_loop:
+	move.b  (a0)+, (a1)+
+	dbf     d7, .values_load_loop
 
 	rts
-
-.pal_text_1:
-	dc.b    "Note", 0
-	even
-
-.pal_text_2:
-	dc.b    "This pre-release supports only NTSC.", $0A
-	dc.b    $0A
-	dc.b    "On PAL, the game runs at a lower", $0A
-	dc.b    "speed than intended.", 0
-	even
-
-.pal_text_3:
-	dc.b    "Press Start to continue", 0
-	even
-
-; ------------------------------------------------------------------------------
-
-pal_display_text:
-	move.w  d1, 4(a0)
-	move.w  #3, 4(a0)
-.chars_loop:
-	move.b  (a1)+, d0
-	beq.s   .text_ended
-	cmp.b   #$0A, d0 ; New line
-	beq.s   .next_line
-
-	move.w  d0, (a0)
-	bra.s   .chars_loop
-
-.next_line:
-	addi.w  #$0100, d1
-	bra.s   pal_display_text
-
-.text_ended:
-	rts
-
 

@@ -168,7 +168,6 @@ renderer_handle_wipe:
 	cmpi.b  #16, (RAM_wipe_value).w
 	bhs.s   .set_wipe_flag
 
-	; TODO: correct PAL value
 	move.b  #1, (RAM_wipe_delay).w
 	move.b  (RAM_wipe_delta).w, d0
 	add.b   d0, (RAM_wipe_value).w
@@ -195,7 +194,6 @@ renderer_handle_wipe:
 	move.b  #14, (RAM_wipe_value).w
 	move.b  #-1, (RAM_wipe_delta).w
 
-	; TODO: correct PAL value
 	move.b  #1, (RAM_wipe_delay).w
 
 	bra.s   .wipe_cmd_done
@@ -204,7 +202,6 @@ renderer_handle_wipe:
 	clr.b   (RAM_wipe_value).w
 	move.b  #1, (RAM_wipe_delta).w
 
-	; TODO: correct PAL value
 	move.b  #1, (RAM_wipe_delay).w
 
 	bra.s   .wipe_cmd_done

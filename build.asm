@@ -12,6 +12,7 @@
 	include 'src/sound.asm'
 
 	include 'data/luts.asm'
+	include 'data/fps-values.asm'
 	include 'data/menu.asm'
 	include 'data/cheat.asm'
 	include 'data/palettes.asm'

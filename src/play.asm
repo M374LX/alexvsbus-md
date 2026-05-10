@@ -38,7 +38,7 @@ play_clear:
 	bset.b  #0, (RAM_play_flags).w ; Set "ignore user input" flag
 
 	move.b  #$90, (RAM_time).w
-	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
 
 	; Set player initial position
 	move.w  #96,  (RAM_player_x).w
@@ -82,21 +82,25 @@ play_clear:
 	endr
 
 	; Initialize animations
+	moveq   #0, d0
 	moveq   #NUM_ANIMS-1, d7
 	lea     (RAM_anims).w, a0
 	lea     DATA_anims_init, a1
 .anims_init_loop:
-	move.b  (a1), 1(a0)  ; Last frame (number of frames minus one)
-	move.b  1(a1), 3(a0) ; Delay (default to NTSC) - TODO: check if it is PAL
-	move.b  1(a1), 5(a0) ; Maximum delay (default to NTSC) - TODO: check if it is PAL
-	move.b  3(a1), 6(a0) ; Flags
+	; Find delay
+	movea.w (a1)+, a2
+	move.b  (a2), d0
+
+	move.b  (a1)+, 1(a0) ; Last frame (number of frames minus one)
+	move.b  d0, 2(a0)    ; Delay
+	move.b  d0, 3(a0)    ; Maximum delay
+	move.b  (a1)+, 4(a0) ; Flags
 
 	; Next animation
 	addq.w  #ANIM_SIZE_BYTES, a0
-	addq.w  #4, a1
 	dbf     d7, .anims_init_loop
 
-	move.b  #60, (RAM_push_arrow_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_push_arrow_delay).w
 
 	rts
 
@@ -138,7 +142,7 @@ play_set_input:
 	; Check if the jump timeout needs to be reset
 	btst.l  #PLAY_INPUT_JUMP, d2
 	beq.s   .ret
-	move.b  #JUMP_TIMEOUT, (RAM_jump_timeout).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w
 
 .ret:
 	rts
@@ -247,12 +251,11 @@ add_crack_particles:
 	lea     (RAM_crack_particles).w, a0
 	adda.w  d3, a0
 
-	; TODO: correct PAL values for velocity (for all four added particles)
 	; Particle #1
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #-16384, (a0)+
-	move.l  #-131072, (a0)+
+	move.l  (FPSVAL_M15_PXS).w, (a0)+
+	move.l  (FPSVAL_M120_PXS).w, (a0)+
 
 	addi.w  #16, d3
 	andi.w  #((16*16)-1), d3
@@ -262,8 +265,8 @@ add_crack_particles:
 	; Particle #2
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #-6553, (a0)+
-	move.l  #-209715, (a0)+
+	move.l  (FPSVAL_M6_PXS).w, (a0)+
+	move.l  (FPSVAL_M192_PXS).w, (a0)+
 
 	addi.w  #16, d3
 	andi.w  #((16*16)-1), d3
@@ -273,8 +276,8 @@ add_crack_particles:
 	; Particle #3
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #16384, (a0)+
-	move.l  #-131072, (a0)+
+	move.l  (FPSVAL_15_PXS).w, (a0)+
+	move.l  (FPSVAL_M120_PXS).w, (a0)+
 
 	addi.w  #16, d3
 	andi.w  #((16*16)-1), d3
@@ -284,8 +287,8 @@ add_crack_particles:
 	; Particle #4
 	move.l  d0, (a0)+
 	move.l  d1, (a0)+
-	move.l  #6553, (a0)+
-	move.l  #-209715, (a0)+
+	move.l  (FPSVAL_6_PXS).w, (a0)+
+	move.l  (FPSVAL_M192_PXS).w, (a0)+
 
 	addq.b  #4, d2
 	andi.b  #16-1, d2
@@ -309,13 +312,13 @@ move_bus_to_end:
 	lea     (RAM_anims+ANIM_BUS_DOOR_REAR).w, a0
 	clr.b   (a0)      ; Current frame
 	move.b  #3, 1(a0) ; Last frame
-	clr.b   6(a0)     ; Flags (not running, no reverse, no loop)
+	clr.b   4(a0)     ; Flags (not running, no reverse, no loop)
 
 	; Make front door open
 	lea     (RAM_anims+ANIM_BUS_DOOR_FRONT).w, a0
 	move.b  #3, (a0)  ; Current frame
 	move.b  #3, 1(a0) ; Last frame
-	move.b  #2, 6(a0) ; Flags (not running, reverse, no loop)
+	move.b  #2, 4(a0) ; Flags (not running, reverse, no loop)
 
 	; Set bus route sign for the bus at the end of the level
 	; Note: zero refers to the goal sign and, since there is no sign numbered
@@ -352,7 +355,7 @@ show_player_in_bus:
 
 start_score_count:
 	bset.b  #4, (RAM_play_flags).w ; Set "counting score" flag
-	move.b  #6, (RAM_time_delay).w ; TODO: correct PAL value (#5 for PAL)
+	move.b  (FPSVAL_0_1_S).w, (RAM_time_delay).w
 
 	rts
 
@@ -382,7 +385,7 @@ update_remaining_time:
 	subq.b  #1, (RAM_time_delay).w ; Subtract one from delay
 	bgt.s   .ret                   ; If the delay has not ended, skip
 
-	move.b  #60, (RAM_time_delay).w ; Reset delay (TODO: correct PAL value)
+	move.b  (FPSVAL_1_S).w, (RAM_time_delay).w ; Reset delay
 
 	; If time is not over, skip
 	tst.b   (RAM_time).w
@@ -424,7 +427,7 @@ update_score_count:
 	rts
 
 .no_delay:
-	move.b  #6, (RAM_time_delay).w ; TODO: correct PAL value (#5 for PAL)
+	move.b  (FPSVAL_0_1_S).w, (RAM_time_delay).w
 
 	tst.b   (RAM_time).w
 	bhi.s   .count_not_over
@@ -525,7 +528,7 @@ move_objects:
 	; Gushes
 	moveq   #0, d7
 	move.b  (RAM_num_gushes).w, d7
-	beq     .no_gushes
+	beq.s   .no_gushes
 	subq.b  #1, d7
 	lea     (RAM_gushes).w, a0
 .gushes_loop:
@@ -568,10 +571,10 @@ move_objects:
 	; Advance gush movement pattern position and store it in d2
 	moveq   #0, d2
 	move.b  11(a0), d2
-	addq.b  #8, d2
+	addq.b  #4, d2
 
 	; Point a2 to the next position of the movement pattern
-	lea     DATA_gush_move_patterns, a2
+	lea     (DATA_gush_move_patterns).w, a2
 	moveq   #0, d1
 	move.b  10(a0), d1
 	add.w   d1, d1
@@ -579,7 +582,7 @@ move_objects:
 	adda.w  d2, a2
 
 	; Check if the movement pattern needs to be restarted
-	tst.l   (a2)
+	tst.w   (a2)
 	bne.s   .gush_dont_restart_movement
 
 	; Restart movement pattern
@@ -588,8 +591,9 @@ move_objects:
 .gush_dont_restart_movement:
 
 	; Set Y velocity and destination position from movement pattern
-	move.l  (a2), 4(a0)
-	move.w  6(a2), 8(a0)
+	movea.w (a2), a3
+	move.l  (a3), 4(a0)
+	move.w  2(a2), 8(a0)
 
 	; Store next movement pattern position
 	move.b  d2, 11(a0)
@@ -623,7 +627,7 @@ move_objects:
 .rope_xmax_reached:
 	move.w  (RAM_grabbed_rope_xmax).w, (RAM_grabbed_rope_x).w
 	clr.w   (RAM_grabbed_rope_x+2).w
-	move.l  #-209715, (RAM_grabbed_rope_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M192_PXS).w, (RAM_grabbed_rope_xvel).w
 	bra.s   .rope_limits_done
 
 .rope_xmin_reached:
@@ -654,7 +658,7 @@ move_objects:
 	beq.s   .next_pushable_crate
 
 	move.l  (a0), d0
-	addi.l  #78643, d0 ; TODO: correct PAL value
+	add.l   (FPSVAL_72_PXS).w, d0
 	move.l  d0, (a0)
 
 	; Discard fractional part of the X position
@@ -699,8 +703,7 @@ move_objects:
 	tst.l   (RAM_passing_car_x).w
 	blt.s   .passing_car_done
 
-	; TODO: correct PAL velocity
-	move.l  #1310720, d0
+	move.l  (FPSVAL_1200_PXS).w, d0
 	add.l   d0, (RAM_passing_car_x).w
 
 	; Check if the car has reached the limit X position
@@ -744,7 +747,8 @@ move_objects:
 	ble.s   .next_crack_particle
 
 	; Apply gravity
-	addi.l  #3604, 12(a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_198_PXSS).w, d0
+	add.l   d0, 12(a0)
 
 	move.l  8(a0), d0
 	add.l   d0, (a0)  ; x
@@ -827,9 +831,9 @@ handle_car_thrown_peel:
 	clr.w   (a0)+
 	move.w  #200, (a0)+    ; y
 	clr.w   (a0)+
-	move.l  #157286, (a0)+ ; xvel - TODO: correct PAL value
-	move.l  #-13107, (a0)+ ; yvel - TODO: correct PAL value
-	move.l  #9175, (a0)+   ; grav - TODO: correct PAL value
+	move.l  (FPSVAL_144_PXS).w,  (a0)+ ; xvel
+	move.l  (FPSVAL_M12_PXS).w,  (a0)+ ; yvel
+	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
 	move.w  d1, (a0)+      ; xdest
 	move.w  #256, (a0)+    ; ydest
 	move.b  (RAM_num_objs).w, (a0) ; obj
@@ -884,12 +888,12 @@ move_player:
 
 	; Limit X velocity
 	move.l  (RAM_player_xvel).w, d0
-	move.l  #229376, d1 ; TODO: correct PAL value
+	move.l  (FPSVAL_210_PXS).w, d1
 	cmp.l   d1, d0
 	blt.s   .skip_right_limit
 	move.l  d1, d0
 .skip_right_limit:
-	move.l  #-98304, d1 ; TODO: correct PAL value
+	move.l  (FPSVAL_M90_PXS).w, d1
 	cmp.l   d1, d0
 	bgt.s   .skip_left_limit
 	move.l  d1, d0
@@ -900,7 +904,7 @@ move_player:
 	; Apply gravity
 	move.l  (RAM_player_yvel).w, d0
 	add.l   (RAM_player_grav).w, d0
-	move.l  #327680, d1 ; TODO: correct PAL value
+	move.l  (FPSVAL_300_PXS).w,  d1
 	cmp.l   d1, d0
 	ble.s   .skip_downwards_velocity_limit
 	move.l  d1, d0
@@ -1281,7 +1285,7 @@ handle_solids:
 	cmpi.w  #SOL_PASSAGEWAY_EXIT, d0
 	bne.s   .not_leaving_passageway
 	move.l  (RAM_player_yvel).w, d0
-	cmpi.l  #-176947, d0 ; TODO: correct PAL value
+	cmp.l   (FPSVAL_M162_PXS).w, d0
 	bgt.s   .not_leaving_passageway
 	bra.s   .next_solid_y
 
@@ -1397,7 +1401,7 @@ handle_passageways:
 	bne.s   .next_passageway
 
 	; Move camera down
-	move.l  #445644, (RAM_camera_yvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_408_PXS).w, (RAM_camera_yvel).w
 
 .next_passageway:
 	addq.w  #4, a0
@@ -1430,8 +1434,9 @@ handle_passageways:
 	btst.b  d0, (RAM_passageway_opened_exits).w
 	bne.s   .not_opening_exit ; Already opened
 
-	cmpi.l  #-176947, (RAM_player_yvel).w ; TODO: correct PAL value
-	bge.s   .not_opening_exit
+	move.l  (FPSVAL_M162_PXS).w, d0
+	cmp.l   (RAM_player_yvel).w, d0
+	blt.s   .not_opening_exit
 
 	cmpi.w  #(FLOOR_Y+8), (RAM_player_y).w
 	bge.s   .not_opening_exit
@@ -1462,7 +1467,7 @@ handle_passageways:
 	bne.s   .ret
 
 	; Move camera up
-	move.l  #-445644, (RAM_camera_yvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M408_PXS).w, (RAM_camera_yvel).w
 
 .ret:
 	rts
@@ -1564,8 +1569,8 @@ handle_player_interactions:
 	lea     (RAM_anims+ANIM_COIN_SPARK_1).w, a0
 	adda.w  d0, a0
 	move.b  #3, (a0)
-	move.w  4(a0), 2(a0) ; Set delay
-	move.b  #3, 6(a0)    ; Set "running" and "reverse" flags
+	move.b  3(a0), 2(a0) ; Set delay
+	move.b  #3, 4(a0)    ; Set "running" and "reverse" flags
 
 	move.b  (RAM_next_coin_spark).w, d0
 	addq.b  #1, d0
@@ -1725,7 +1730,7 @@ handle_player_interactions:
 
 	move.w  #266, (a0)+ ; y
 	clr.w   (a0)+
-	move.l  #-157286, (a0)+ ; yvel (TODO: correct PAL value)
+	move.l  (FPSVAL_M144_PXS).w, (a0)+ ; yvel
 	move.w  (DATA_gush_move_pattern_2+6).w, (a0)+ ; ydest
 	move.b  #1, (a0)+   ; move_pattern_index
 	clr.b   (a0)+       ; move_pattern_pos
@@ -1788,7 +1793,7 @@ handle_player_interactions:
 	move.b  d6, (RAM_grabbed_rope_obj).w
 	move.w  2(a2), (RAM_grabbed_rope_x).w
 	clr.w   (RAM_grabbed_rope_x+2).w
-	move.l  #281804, (RAM_grabbed_rope_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_258_PXS).w, (RAM_grabbed_rope_xvel).w
 
 	bra.s   .next_obj
 
@@ -1797,14 +1802,14 @@ handle_player_interactions:
 	blt.s   .next_obj
 
 	; The player character has hit a spring
-	move.l  #-268697, (RAM_player_yvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M246_PXS).w, (RAM_player_yvel).w
 
 	move.l  a2, (RAM_hit_spring).w
 
 	lea     (RAM_anims+ANIM_HIT_SPRING).w, a0
 	move.b  #5, (a0)
-	move.w  4(a0), 2(a0) ; Set delay
-	move.b  #3, 6(a0)    ; Set "running" and "reverse" flags
+	move.b  3(a0), 2(a0) ; Set delay
+	move.b  #3, 4(a0)    ; Set "running" and "reverse" flags
 
 	; Set d5 flag
 	bset.l  #3, d5
@@ -1828,9 +1833,9 @@ handle_player_interactions:
 
 	; Make peel move
 	lea     (RAM_moving_peels+8).w, a0
-	move.l  #163840, (a0)+  ; xvel (TODO: correct PAL value)
-	move.l  #-222822, (a0)+ ; yvel (TODO: correct PAL value)
-	move.l  #9175, (a0)+    ; grav (TODO: correct PAL value)
+	move.l  (FPSVAL_150_PXS).w,  (a0)+ ; xvel
+	move.l  (FPSVAL_M204_PXS).w, (a0)+ ; yvel
+	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
 	clr.w   (a0)+           ; xdest 
 	move.w  #500, (a0)      ; ydest (below the Y limit, which is 400)
 
@@ -1858,7 +1863,7 @@ handle_player_interactions:
 	move.b  (RAM_play_input_down).w, d0
 	btst.b  #PLAY_INPUT_RIGHT, (RAM_play_input_down).w
 	bne.s   .dont_reset_crate_push_remaining
-	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
 .dont_reset_crate_push_remaining:
 
 	; Store the X and Y positions of the point used to check if the player
@@ -1892,7 +1897,7 @@ handle_player_interactions:
 	bgt.s   .next_pushable_crate
 
 	; Finished pushing the crate
-	move.b  #42, (RAM_crate_push_remaining).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
 	move.b  #6, 6(a0) ; Set crate's "pushed" and "moving" flags
 
 	move.w  #SFX_CRATE, d0
@@ -1937,7 +1942,7 @@ handle_triggers:
 	
 	move.b  3(a0), (RAM_passing_car_color).w
 	move.b  #0, (RAM_passing_car_threw_peel).w
-	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+6).w ; Set car wheel animation "running" flag
+	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+4).w ; Set car wheel animation "running" flag
 
 	bra.s   .next_trigger
 
@@ -1949,9 +1954,9 @@ handle_triggers:
 	swap.w  d1
 	move.l  d1, (RAM_hen_x).w
 
-	move.l  #393216, (RAM_hen_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_360_PXS).w, (RAM_hen_xvel).w
 	clr.l   (RAM_hen_acc).w
-	bset.b  #0, (RAM_anims+ANIM_HEN+6).w ; Set hen animation running flag
+	bset.b  #0, (RAM_anims+ANIM_HEN+4).w ; Set hen animation running flag
 
 .next_trigger:
 	addq.w  #4, a0
@@ -1995,12 +2000,10 @@ do_player_state_specifics:
 	bra.s   .acc_apply
 
 .acc_right:
-	; TODO: correct PAL value
-	move.l  #3932, d0
+	move.l  (FPSVAL_216_PXSS).w, d0
 	bra.s  .acc_apply
 .acc_left:
-	; TODO: correct PAL value
-	move.l  #-3932, d0
+	move.l  (FPSVAL_M216_PXSS).w, d0
 .acc_apply:
 	move.l  d0, (RAM_player_acc).w
 
@@ -2011,7 +2014,7 @@ do_player_state_specifics:
 	ble.s   .no_jump
 
 	; Jump
-	move.l  #-170393, (RAM_player_yvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M156_PXS).w, (RAM_player_yvel).w
 	clr.b   (RAM_jump_timeout).w
 .no_jump:
 
@@ -2098,8 +2101,8 @@ do_player_state_specifics:
 
 	bchg.b  #0, (RAM_player_flags).w ; Toggle player character's visibility
 
-	subq.w  #1, (RAM_player_flicker_delay).w
-	bgt.s   .ret ; Branch if the delay is not over yet
+	subq.b  #1, (RAM_player_flicker_delay).w
+	bhi.s   .ret ; Branch if the delay is not over yet
 
 	clr.b   (RAM_player_state).w ; Return to normal state
 
@@ -2189,7 +2192,7 @@ handle_respawn:
 	bgt.s   .no_camera_retreat
 
 	move.w  d0, (RAM_camera_xdest).w
-	move.l  #-786432, (RAM_camera_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M720_PXS).w, (RAM_camera_xvel).w
 .no_camera_retreat:
 
 	move.w  #SFX_RESPAWN, d0
@@ -2206,8 +2209,6 @@ handle_player_state_change:
 	cmp.b   (RAM_player_old_state).w, d2
 	bne.s   .state_changed
 	rts
-
-	; TODO: review all PAL values
 
 .state_changed:
 	moveq   #0, d0
@@ -2229,40 +2230,39 @@ handle_player_state_change:
 	bra.w   .state_inactive
 
 .state_normal:
-	move.l  #4587, (RAM_player_dec).w
-	move.l  #4259, (RAM_player_grav).w
+	move.l  (FPSVAL_252_PXSS).w, (RAM_player_dec).w
+	move.l  (FPSVAL_234_PXSS).w, (RAM_player_grav).w
 	rts
 
 .state_slip:
-	move.l  #-13107, (RAM_player_xvel).w
-	move.l  #-26214, (RAM_player_yvel).w
+	move.l  (FPSVAL_M12_PXS).w, (RAM_player_xvel).w
+	move.l  (FPSVAL_M24_PXS).w, (RAM_player_yvel).w
 	move.w  #PLAYER_HEIGHT_SLIP, (RAM_player_height).w
 	move.b  #PLAYER_ANIM_SLIP, (RAM_player_anim_type).w
 	rts
 
 .state_getup:
 	clr.l   (RAM_player_xvel).w
-	move.l  #-131072, (RAM_player_yvel).w
+	move.l  (FPSVAL_M120_PXS).w, (RAM_player_yvel).w
 	move.w  #PLAYER_HEIGHT_SLIP, (RAM_player_height).w
 	move.b  #PLAYER_ANIM_SLIPREV, (RAM_player_anim_type).w
 	rts
 
 .state_throwback:
 	move.b  #PLAYER_ANIM_THROWBACK, (RAM_player_anim_type).w
-	move.l  #-111411, (RAM_player_xvel).w
-	move.l  #-157286, (RAM_player_yvel).w
+	move.l  (FPSVAL_M102_PXS).w, (RAM_player_xvel).w
+	move.l  (FPSVAL_M144_PXS).w, (RAM_player_yvel).w
 	rts
 
 .state_grabrope:
 	clr.l   (RAM_player_grav).w
 	clr.l   (RAM_player_xvel).w
-	move.l  #131072, (RAM_player_yvel).w
+	move.l  (FPSVAL_120_PXS).w, (RAM_player_yvel).w
 	move.b  #PLAYER_ANIM_GRABROPE, (RAM_player_anim_type).w
 	rts
 
 .state_flicker:
-	; TODO: fix PAL delay
-	move.w  #30, (RAM_player_flicker_delay).w
+	move.b  (FPSVAL_0_5_S).w, (RAM_player_flicker_delay).w
 	moveq   #0, d0
 	move.l  d0, (RAM_player_grav).w
 	move.l  d0, (RAM_player_xvel).w
@@ -2376,12 +2376,17 @@ handle_player_animation_change:
 	add.w   d0, d0
 	adda.w  d0, a0
 
-	; Start animation
 	lea     (RAM_anims).w, a1
+
+	; Find delay
+	movea.w (a0)+, a2
+	move.b  (a2), d0
+
+	; Start animation
 	move.b  (a0)+, (a1)+ ; Current frame
 	move.b  (a0)+, (a1)+ ; Last frame (number of frames minus one)
-	move.w  (a0),  (a1)+ ; Delay
-	move.w  (a0)+, (a1)+ ; Maximum delay
+	move.b  d0, (a1)+    ; Delay
+	move.b  d0, (a1)+    ; Maximum delay
 	move.b  (a0),  (a1)  ; Flags
 
 .ret:
@@ -2393,49 +2398,47 @@ update_animations:
 	; Determine bus wheel animation delay
 	lea     (RAM_anims+ANIM_BUS_WHEELS).w, a0
 
-	bclr.b  #0, 6(a0) ; Clear "running" flag
+	bclr.b  #0, 4(a0) ; Clear "running" flag
 
 	move.l  (RAM_bus_xvel).w, d0
 	ble.s   .bus_not_moving
 
-	; TODO: correct PAL values
-	cmpi.l  #144179, d0
+	cmp.l   (FPSVAL_132_PXS).w, d0
 	bgt.s   .delay_low
-	cmpi.l  #91750, d0
+	cmp.l   (FPSVAL_84_PXS).w, d0
 	bgt.s   .delay_medium
 
 	; High delay
-	; TODO: correct PAL values
-	move.w  #6, d1
+	move.b  (FPSVAL_0_1_S).w, d1
 	bra.s   .delay_determined
 .delay_medium:
-	move.w  #3, d1
+	move.b  (FPSVAL_0_05_S).w, d1
 	bra.s   .delay_determined
 .delay_low:
-	move.w  #1, d1
+	move.b  (FPSVAL_0_02_S).w, d1
 .delay_determined:
 
-	bset.b  #0, 6(a0) ; Set "running" flag
-	move.w  d1, 4(a0) ; Maximum delay
+	bset.b  #0, 4(a0) ; Set "running" flag
+	move.b  d1, 3(a0) ; Maximum delay
 
-	move.w  2(a0), d0 ; Delay
-	cmp.w   d1, d0
+	move.b  2(a0), d0 ; Delay
+	cmp.b   d1, d0
 	ble.s   .no_delay_correction
-	move.w  d1, 2(a0) ; Delay
+	move.b  d1, 2(a0) ; Delay
 .no_delay_correction:
 .bus_not_moving:
 
 	move.w  #NUM_ANIMS-1, d3
 	lea     (RAM_anims).w, a3
 .anims_loop:
-	move.b  6(a3), d4    ; Store flags in d4
+	move.b  4(a3), d4    ; Store flags in d4
 
 	btst.l  #0, d4       ; Is animation running?
 	beq.s   .next_anim   ; If not, branch
 
-	subq.w  #1, 2(a3)    ; Decrease delay
+	subq.b  #1, 2(a3)    ; Decrease delay
 	bgt.s   .next_anim   ; Branch if it is not time to change the frame
-	move.w  4(a3), 2(a3) ; Otherwise, restart delay
+	move.b  3(a3), 2(a3) ; Otherwise, restart delay
 
 	btst.l  #1, d4       ; Is the animation in reverse?
 	beq.s   .not_reverse ; If not, branch
@@ -2483,7 +2486,7 @@ move_push_arrow:
 
 	move.w  d1, (RAM_push_arrow_xoffs).w
 	clr.w   (RAM_push_arrow_xoffs+2).w
-	move.l  #-32768, (RAM_push_arrow_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M30_PXS).w, (RAM_push_arrow_xvel).w
 .no_right_limit:
 
 	tst.l   (RAM_push_arrow_xvel).w
@@ -2503,8 +2506,8 @@ move_push_arrow:
 	tst.l   (RAM_push_arrow_xoffs).w
 	bne.s   .no_move_start
 
-	move.l  #32768, (RAM_push_arrow_xvel).w ; TODO: correct PAL value
-	move.b  #60, (RAM_push_arrow_delay).w ; TODO: correct PAL value
+	move.l  (FPSVAL_30_PXS).w, (RAM_push_arrow_xvel).w
+	move.b  (FPSVAL_1_S).w, (RAM_push_arrow_delay).w
 .no_move_start:
 
 	rts
@@ -2515,10 +2518,10 @@ update_sequence:
 	; Clear screen wipe flags
 	andi.b  #$F9, (RAM_sequence_flags).w
 
-	tst.w   (RAM_sequence_delay).w
+	tst.b   (RAM_sequence_delay).w
 	beq.s   .no_delay
 
-	subq.w  #1, (RAM_sequence_delay).w
+	subq.b  #1, (RAM_sequence_delay).w
 	rts
 
 .no_delay:
@@ -2670,7 +2673,7 @@ update_sequence:
 	bclr.b  #0, (RAM_play_flags).w    ; Ignore user input
 	move.b  #1, (RAM_camera_follow_player).w
 	bset.b  #1, (RAM_play_flags).w    ; Time running
-	move.b  #60, (RAM_time_delay).w   ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_time_delay).w
 	bset.b  #5, (RAM_play_flags).w    ; Can pause
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 
@@ -2708,7 +2711,7 @@ update_sequence:
 	rts
 
 .seq_1_time_up:
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 
 	; Determine whether to set the next sequence step to SEQ_TIMEUP_BUS_FAR
 	; or SEQ_TIMEUP_BUS_NEAR depending on the player character's distance
@@ -2727,7 +2730,7 @@ update_sequence:
 	lea     (RAM_anims+ANIM_BUS_DOOR_REAR).w, a0
 	move.b  #3, (a0)  ; Current frame
 	move.b  #3, 1(a0) ; Last frame
-	clr.b   6(a0)     ; Flags (not running, no reverse, no loop)
+	clr.b   4(a0)     ; Flags (not running, no reverse, no loop)
 
 	bset.b  #0, (RAM_play_flags).w    ; Ignore user input
 	bclr.b  #1, (RAM_play_flags).w    ; Time running
@@ -2747,18 +2750,18 @@ update_sequence:
 	move.b  #SEQ_NORMAL_PLAY_START, (RAM_sequence_step).w
 .seq_10_no_skip:
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	rts
 
 .seq_11:
 	; Start bus rear door animation
-	move.b  #3, (RAM_anims+ANIM_BUS_DOOR_REAR+6).w ; Set "running" and "reverse" flags
+	move.b  #3, (RAM_anims+ANIM_BUS_DOOR_REAR+4).w ; Set "running" and "reverse" flags
 
 	; Start bus movement
-	move.l  #4587, (RAM_bus_acc).w  ; TODO: correct PAL value
-	move.l  #6553, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_252_PXSS).w, (RAM_bus_acc).w
+	move.l  (FPSVAL_6_PXS).w, (RAM_bus_xvel).w
 
-	move.w  #120, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_2_S).w, (RAM_sequence_delay).w
 	clr.b   (RAM_sequence_step).w ; SEQ_NORMAL_PLAY_START = 0
 	rts
 
@@ -2766,21 +2769,21 @@ update_sequence:
 	; Bus leaves while closing the front door
 
 	; Start bus movement
-	move.l  #4587, (RAM_bus_acc).w  ; TODO: correct PAL value
-	move.l  #6553, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_252_PXSS).w, (RAM_bus_acc).w
+	move.l  (FPSVAL_6_PXS).w, (RAM_bus_xvel).w
 
 	; Close front door
-	move.w  #6, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w ; TODO: correct PAL value
-	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+6).w ; Set "running" and "reverse" flags
+	move.b  (FPSVAL_0_1_S).w, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w
+	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+4).w ; Set "running" and "reverse" flags
 
-	move.w  #120, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_21:
 	; Screen wipes to black
 	bset.b  #2, (RAM_sequence_flags).w
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -2802,7 +2805,7 @@ update_sequence:
 	move.w  (RAM_level_size_pixels).w, d0
 	subi.w  #SCREEN_W, d0
 	move.w  d0, (RAM_camera_xdest).w
-	move.l  #786432, (RAM_camera_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_720_PXS).w, (RAM_camera_xvel).w
 
 	; Ensure the camera is not moving vertically
 	clr.l   (RAM_camera_yvel).w
@@ -2817,7 +2820,7 @@ update_sequence:
 	tst.l   (RAM_camera_yvel).w
 	bne     .ret
 
-	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	move.b  #SEQ_BUS_LEAVING, (RAM_sequence_step).w
 	rts
 
@@ -2826,7 +2829,7 @@ update_sequence:
 	clr.l   (RAM_camera_xvel).w
 	clr.l   (RAM_camera_yvel).w
 	bset.b  #2, (RAM_sequence_flags).w ; Wipe out screen
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
@@ -2844,7 +2847,7 @@ update_sequence:
 	move.l  #NONE, (RAM_hen_x).w
 
 	bset.b  #1, (RAM_sequence_flags).w ; Wipe in screen
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
@@ -2874,9 +2877,9 @@ update_sequence:
 	clr.w   (a0)+
 	move.w  #(BUS_Y+72), (a0)+
 	clr.w   (a0)+
-	move.l  #-557056, (a0)+ ; TODO: correct PAL value
-	move.l  #222822, (a0)+  ; TODO: correct PAL value
-	move.l  #9175, (a0)+    ; TODO: correct PAL value
+	move.l  (FPSVAL_M510_PXS).w, (a0)+
+	move.l  (FPSVAL_204_PXS).w,  (a0)+
+	move.l  (FPSVAL_504_PXSS).w, (a0)+
 	move.w  (RAM_bus_x).w, (a0)
 	addi.w  #345, (a0)+
 	move.w  #256, (a0)+
@@ -2901,14 +2904,14 @@ update_sequence:
 	clr.w   (a0)+
 	move.w  #120, (a0)+
 	clr.w   (a0)+
-	move.l  #327680, (a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_300_PXS).w, (a0)
 
 	; Set animation
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
 	clr.b   (a0)+
 	move.b  #3, (a0)+
-	move.w  #6, (a0)+ ; TODO: correct PAL value
-	move.w  #6, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
 	move.b  #5, (a0)  ; Set "running" and "loop" flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
@@ -2947,7 +2950,7 @@ update_sequence:
 	move.w  d0, (RAM_player_x).w
 	clr.w   (RAM_player_x+2).w
 	clr.l   (RAM_player_xvel).w
-	move.b  #JUMP_TIMEOUT, (RAM_jump_timeout).w ; Trigger a jump (TODO: correct PAL value)
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
 
 .seq_52_next_step:
 	addq.b  #1, (RAM_sequence_step).w
@@ -2990,7 +2993,7 @@ update_sequence:
 	bne     .ret
 
 	; Score count finished
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3019,16 +3022,16 @@ update_sequence:
 	bne     .ret
 
 	; Score count finished
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_72:
 	; Close front door
-	move.w  #6, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w ; TODO: correct PAL value
-	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+6).w ; Set "running" and "reverse" flags
+	move.b  (FPSVAL_0_1_S).w, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w
+	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+4).w ; Set "running" and "reverse" flags
 
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3044,15 +3047,15 @@ update_sequence:
 	clr.w   (a0)+
 	move.w  #203, (a0)+ ; y
 	clr.w   (a0)+
-	move.l  #-163840, (a0)+ ; xvel (TODO: correct PAL value)
+	move.l  (FPSVAL_M150_PXS).w, (a0)+ ; xvel
 
 	; Set animation
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
-	clr.b   (a0)
-	move.b  #5, 1(a0)
-	move.w  #6, 2(a0) ; TODO: correct PAL value
-	move.w  #6, 4(a0) ; TODO: correct PAL value
-	move.b  #5, 6(a0) ; Flags (running, no reverse, loop)
+	clr.b   (a0)+
+	move.b  #5, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  #5, (a0) ; Flags (running, no reverse, loop)
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3069,7 +3072,7 @@ update_sequence:
 	; Bearded man decelerates
 	move.w  d0, 2(a0)
 	clr.w   4(a0)
-	move.l  #4587, 18(a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_252_PXSS).w, 18(a0)
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3102,10 +3105,10 @@ update_sequence:
 	clr.l   18(a0)
 
 	; Bus front door opens
-	move.w  #6, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w ; TODO: correct PAL value
-	move.b  #1, (RAM_anims+ANIM_BUS_DOOR_FRONT+6).w ; Set "running" flag
+	move.b  (FPSVAL_0_1_S).w, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w
+	move.b  #1, (RAM_anims+ANIM_BUS_DOOR_FRONT+4).w ; Set "running" flag
 
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3114,8 +3117,8 @@ update_sequence:
 
 	; Bearded man jumps into the bus
 	move.b  #COBJ_BEARDED_MAN_JUMP, (a0)
-	move.l  #-170393, 14(a0) ; TODO: correct PAL value
-	move.l  #4259, 22(a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_M156_PXS).w, 14(a0)
+	move.l  (FPSVAL_234_PXSS).w, 22(a0)
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3141,7 +3144,7 @@ update_sequence:
 	move.l  (RAM_bus_x).w, d0
 	sub.l   d0, 2(a0)
 
-	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3154,7 +3157,7 @@ update_sequence:
 	btst.b  #1, (RAM_player_flags).w
 	beq     .ret
 
-	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3183,7 +3186,7 @@ update_sequence:
 	clr.w   (RAM_player_x+2).w
 	clr.l   (RAM_player_xvel).w
 	bclr.b  #PLAY_INPUT_RIGHT, (RAM_play_input_down).w
-	move.b  #JUMP_TIMEOUT, (RAM_jump_timeout).w ; Trigger a jump (TODO: correct PAL value)
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3210,7 +3213,7 @@ update_sequence:
 	bne     .ret
 
 	; Score count finished
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3236,7 +3239,7 @@ update_sequence:
 	move.w  #120, (a0)+
 	clr.w   (a0)+
 	clr.l   (a0)+
-	move.l  #275251, (a0); TODO: correct PAL value
+	move.l  (FPSVAL_252_PXS).w, (a0)
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3273,7 +3276,7 @@ update_sequence:
 	clr.l   (a0)+
 	clr.l   (a0)
 
-	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3282,11 +3285,11 @@ update_sequence:
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_1).w, a0
 	clr.b   (a0)+
 	move.b  #8, (a0)+
-	move.w  #12, (a0)+ ; TODO: correct PAL value
-	move.w  #12, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (a0)+
+	move.b  (FPSVAL_0_2_S).w, (a0)+
 	move.b  #1, (a0)   ; Set "running" flag
 
-	move.w  #120, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3295,12 +3298,12 @@ update_sequence:
 	bset.b  #0, (RAM_player_flags).w ; Set "visible" flag
 	clr.b   (RAM_cutscene_objs).w
 
-	move.w  #12, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_94:
-	move.b  #JUMP_TIMEOUT, (RAM_jump_timeout).w ; Trigger a jump (TODO: correct PAL value)
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3325,7 +3328,7 @@ update_sequence:
 	bne     .ret
 
 	; Score count finished
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3335,12 +3338,12 @@ update_sequence:
 
 .seq_100:  ; SEQ_GOAL_REACHED_SCENE5
 	; Bus leaves before the player character can enter it
-	move.l  #4587, (RAM_bus_acc).w ; TODO: correct PAL value
-	move.l  #6553, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_252_PXSS).w, (RAM_bus_acc).w
+	move.l  (FPSVAL_6_PXS).w, (RAM_bus_xvel).w
 
 	; Close front door
-	move.w  #6, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w ; TODO: correct PAL value
-	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+6).w ; Set "running" and "reverse" flags
+	move.b  (FPSVAL_0_1_S).w, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w
+	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+4).w ; Set "running" and "reverse" flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3361,15 +3364,15 @@ update_sequence:
 	move.b  #COBJ_PLAYER_RUN, (a0)
 	move.l  (RAM_player_x).w, 2(a0)
 	move.l  (RAM_player_y).w, 6(a0)
-	move.l  #137625, 10(a0) ; TODO: correct PAL value
-	move.l  #9175, 18(a0)   ; TODO: correct PAL value
+	move.l  (FPSVAL_126_PXS).w, 10(a0)
+	move.l  (FPSVAL_504_PXSS).w, 18(a0)
 
 	; Start player character running animation
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_1).w, a0
 	clr.b   (a0)+
 	move.b  #3, (a0)+
-	move.w  #6, (a0)+ ; TODO: correct PAL value
-	move.w  #6, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
 	move.b  #5, (a0)  ; Set "running" and "loop" flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
@@ -3398,14 +3401,14 @@ update_sequence:
 	btst.b  #4, (RAM_play_flags).w
 	bne     .ret
 
-	move.w  #30, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_104: 
 	; Screen wipes to black
 	bset.b  #2, (RAM_sequence_flags).w
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3434,37 +3437,37 @@ update_sequence:
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
 	move.b  #3, (a0)+
 	move.b  #3, (a0)+
-	move.w  #6, (a0)+ ; TODO: correct PAL value
-	move.w  #6, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
 	clr.b   (a0) ; Clear all flags
 
 	; Setup car wheels animation
 	lea     (RAM_anims+ANIM_CAR_WHEELS).w, a0
 	move.b  #0, (a0)+
 	move.b  #1, (a0)+
-	move.w  #6, (a0)+ ; TODO: correct PAL value
-	move.w  #6, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
 	move.b  #4, (a0)  ; Set "loop" flag
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_111:
 	; Camera moves to the right
-	move.l  #196608, (RAM_camera_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_180_PXS).w, (RAM_camera_xvel).w
 	move.w  #992, (RAM_camera_xdest).w
 
-	move.w  #(60*3), (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_3_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_112:
 	; Traffic jam starts moving
-	move.l  #78643, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_72_PXS).w, (RAM_bus_xvel).w
 
 	; Start car wheels animation
-	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+6).w
+	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+4).w
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3483,9 +3486,9 @@ update_sequence:
 	; Stop car wheels animation
 	lea     (RAM_anims+ANIM_CAR_WHEELS).w, a0
 	clr.b   (a0)
-	bclr.b  #0, 6(a0)
+	bclr.b  #0, 4(a0)
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3499,13 +3502,13 @@ update_sequence:
 	clr.w   (a0)+
 	move.w  #204, (a0)+
 	clr.w   (a0)+
-	move.l  #229376, (a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_210_PXS).w, (a0)
 
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_1).w, a0
 	clr.b   (a0)+
 	move.b  #3, (a0)+
-	move.w  #6, (a0)+ ; TODO: correct PAL value
-	move.w  #6, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_1_S).w, (a0)+
+	move.b  (FPSVAL_0_1_S).w, (a0)+
 	move.b  #5, (a0)  ; Set "running" and "loop" flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
@@ -3526,7 +3529,7 @@ update_sequence:
 	; Player character reaches the flagman, who swings the flag
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
 	clr.b   (a0)
-	bset.b  #0, 6(a0) ; Set "running" flag
+	bset.b  #0, 4(a0) ; Set "running" flag
 	bset.b  #3, (RAM_sequence_flags).w
 .seq_115_no_flag_swing:
 
@@ -3540,7 +3543,7 @@ update_sequence:
 	swap.w  d0
 	clr.w   d0
 	move.l  d0, 2(a0)
-	move.l  #-4587, 18(a0) ; TODO: correct PAL value
+	move.l  (FPSVAL_M252_PXSS).w, 18(a0)
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3550,8 +3553,9 @@ update_sequence:
 
 	; Check if the player character's animation needs to be changed from
 	; "running" to "walking"
-	cmpi.l  #196608, 10(a0) ; TODO: correct PAL value
-	bgt.s   .seq_116_no_player_change
+	move.l  (FPSVAL_180_PXS).w, d0
+	cmp.l   10(a0), d0
+	ble.s   .seq_116_no_player_change
 	cmpi.b  #COBJ_PLAYER_WALK, (a0)
 	beq.s   .seq_116_no_player_change
 
@@ -3578,17 +3582,17 @@ update_sequence:
 
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_1).w, a0
 	clr.w   (a0)
-	clr.b   6(a0) ; Clear all flags
+	clr.b   4(a0) ; Clear all flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_117:
 	; Traffic jam starts moving
-	move.l  #78643, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_72_PXS).w, (RAM_bus_xvel).w
 
 	; Start car wheels animation
-	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+6).w
+	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+4).w
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3607,9 +3611,9 @@ update_sequence:
 	; Stop car wheels animation
 	lea     (RAM_anims+ANIM_CAR_WHEELS).w, a0
 	clr.b   (a0)
-	bclr.b  #0, 6(a0)
+	bclr.b  #0, 4(a0)
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3618,13 +3622,13 @@ update_sequence:
 	move.w  d0, (RAM_hen_x).w
 	clr.w   (RAM_hen_x+2).w
 
-	move.l  #393216, (RAM_hen_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_360_PXS).w, (RAM_hen_xvel).w
 
 	lea     (RAM_anims+ANIM_HEN).w, a0
 	clr.b   (a0)+
 	move.b  #3, (a0)+
-	move.w  #3, (a0)+ ; TODO: correct PAL value
-	move.w  #3, (a0)+ ; TODO: correct PAL value
+	move.b  (FPSVAL_0_05_S).w, (a0)+
+	move.b  (FPSVAL_0_05_S).w, (a0)+
 	move.b  #5, (a0)  ; Set "running" and "loop" flags
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
@@ -3639,7 +3643,7 @@ update_sequence:
 	swap.w  d0
 	clr.w   d0
 	move.l  d0, (RAM_hen_x).w
-	move.l  #-4587, (RAM_hen_acc).w ; TODO: correct PAL value
+	move.l  (FPSVAL_M252_PXSS).w, (RAM_hen_acc).w
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3659,7 +3663,7 @@ update_sequence:
 	; Hen reaches the flagman, who swings the flag
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
 	clr.b   (a0)
-	bset.b  #0, 6(a0) ; Set "running" flag
+	bset.b  #0, 4(a0) ; Set "running" flag
 	bset.b  #4, (RAM_sequence_flags).w
 .seq_121_no_flag_swing:
 
@@ -3681,18 +3685,18 @@ update_sequence:
 
 	lea     (RAM_anims+ANIM_HEN).w, a0
 	move.b  #1, (a0)
-	clr.b   6(a0) ; Clear all flags
+	clr.b   4(a0) ; Clear all flags
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
 .seq_122:
 	; Traffic jam starts moving
-	move.l  #78643, (RAM_bus_xvel).w ; TODO: correct PAL value
+	move.l  (FPSVAL_72_PXS).w, (RAM_bus_xvel).w
 
 	; Start car wheels animation
-	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+6).w
+	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+4).w
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
@@ -3705,7 +3709,7 @@ update_sequence:
 	; Bus reaches the flagman, who swings the flag
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a0
 	clr.b   (a0)
-	bset.b  #0, 6(a0) ; Set "running" flag
+	bset.b  #0, 4(a0) ; Set "running" flag
 	bset.b  #5, (RAM_sequence_flags).w
 
 	; Traffic jam stops
@@ -3717,13 +3721,13 @@ update_sequence:
 	; Stop car wheels animation
 	lea     (RAM_anims+ANIM_CAR_WHEELS).w, a0
 	clr.b   (a0)
-	bclr.b  #0, 6(a0)
+	bclr.b  #0, 4(a0)
 
 	; Bus front door opens
 	lea     (RAM_anims+ANIM_BUS_DOOR_FRONT).w, a0
-	move.b  #1, 6(a0) ; Set "running" flag
+	move.b  #1, 4(a0) ; Set "running" flag
 
-	move.w  #(60*3), (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_3_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3731,7 +3735,7 @@ update_sequence:
 	; Screen wipes to black
 	bset.b  #2, (RAM_sequence_flags).w
 
-	move.w  #60, (RAM_sequence_delay).w ; TODO: correct PAL value
+	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
