@@ -7,8 +7,8 @@ the bus, or else he will have to wait an eternity for the next bus to come.
 
 The original game can be found at https://github.com/M374LX/alexvsbus.
 
-This pre-release of the port is already playable from start to finish (in NTSC
-mode) and features SRAM saving.
+This pre-release of the port is already playable from start to finish in both
+NTSC and PAL and features SRAM saving.
 
 ![Screenshot 1](./docs/img/screenshot1.png)
 ![Screenshot 2](./docs/img/screenshot2.png)
