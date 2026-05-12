@@ -31,7 +31,7 @@ DATA_menu_text_about:
 	dc.b    $7F, " 2021-2026 M374LX", $0A ; $7F = copyright symbol
 	dc.b    $0A 
 	dc.b    $1B, "Release", $0A
-	dc.b    " pre1", $0A
+	dc.b    " pre2", $0A
 	dc.b    $0A
 	dc.b    $1B, "Repository", $0A
 	dc.b    " github.com/M374LX/alexvsbus-md", $0A

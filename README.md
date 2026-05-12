@@ -38,6 +38,7 @@ before it is built. With the tools in the ``tools`` directory built, the
 - Tweak screen transition effects
 - Add settings to disable music and sound effects
 - Add a way to erase SRAM
+- Adapt the manual from the original C game
 - Document data formats, including levels and music streams
 - Document tools in the ``tools`` directory
 - Add more comments to the code
