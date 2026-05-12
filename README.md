@@ -1,4 +1,4 @@
-# Alex vs Bus: The Race (for Sega Genesis)
+# Alex vs Bus: The Race (Sega Genesis port)
 
 This is a Sega Genesis/Mega Drive port of "Alex vs Bus: The Race", a free and
 open source platform runner game in which Alex is just a man who depends on
