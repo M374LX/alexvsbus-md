@@ -31,6 +31,7 @@ SOUNDRAM_size: equ $80
 ; Flags:
 ; 0 - BGM paused
 ; 1 - Handling the SFX (not BGM) stream
+; 2 - PAL system
 SOUNDRAM_flags: equ RAM_sound+$00
 
 ; One bit for each channel
@@ -76,7 +77,7 @@ SOUNDRAM_instrs: equ RAM_sound+$30
 ;
 SOUNDRAM_psg_instrs: equ RAM_sound+$40
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 PSG_DATA: equ $C00011
 FM_DATA:  equ $A04000
@@ -88,7 +89,7 @@ Z80_STATUS_ADDR: equ $A01FF0
 Z80_CMD_PLAY: equ 1
 Z80_CMD_STOP: equ 2
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_init:
 	; Silence all four PSG channels
@@ -117,6 +118,13 @@ sound_init:
 .z80_driver_load_loop:
 	move.b  (a0)+, (a1)+
 	dbf     d7, .z80_driver_load_loop
+
+	; Determine if the system is PAL
+	move.b  $A10001, d0
+	btst.l  #6, d0
+	beq.s   .not_pal
+	bset.b  #2, SOUNDRAM_flags
+.not_pal:
 
 	; Write zero to all of the following YM2612 registers
 	moveq   #0, d1
@@ -155,7 +163,7 @@ sound_init:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 ; d0 = BGM number
 ; Breaks: d0, a0, a1
@@ -177,7 +185,7 @@ sound_play_bgm:
 
 	bra.s   sound_silence_all_channels
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_resume_bgm:
 	btst.b  #0, SOUNDRAM_flags ; Test "paused" flag
@@ -189,14 +197,14 @@ sound_resume_bgm:
 .not_paused:
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_pause:
 	bset.b  #0, SOUNDRAM_flags ; Set "paused" flag
 
 	; Fallthrough
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_stop:
 	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
@@ -204,7 +212,7 @@ sound_stop:
 	clr.w   SOUNDRAM_locked_channels
 	bra.s   sound_silence_all_channels
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 ; d0 = SFX number
 ; Breaks: d0, d7, a0, a1, a2
@@ -226,7 +234,7 @@ sound_play_sfx:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_silence_all_channels:
 	; Silence all four PSG channels
@@ -266,7 +274,7 @@ sound_silence_all_channels:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_update:
 	z80_halt
@@ -304,7 +312,7 @@ sound_update:
 
 	bra     sound_update_psg
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 ; Input
 ; a2 = Stream location in RAM
@@ -675,8 +683,21 @@ sound_handle_events:
 	; Advance to next event position
 	addq.w  #1, (a2)
 
-	; Set the delay
+	; Keep the delay in d0
 	andi.w  #$0F, d0
+
+	; Check if the delay needs to be corrected, which is the case if the
+	; system is PAL and the BGM stream is the one being handled
+	btst.b  #2, SOUNDRAM_flags ; PAL system
+	beq.s   .ev_delay_short_no_correction
+	btst.b  #1, SOUNDRAM_flags ; Handling the BGM stream
+	bne.s   .ev_delay_short_no_correction
+
+	lea     pal_delay_correction(pc), a0
+	sub.b   (a0, d0.w), d0
+.ev_delay_short_no_correction:
+
+	; Set the delay
 	move.w  d0, 2(a2) ; Ticks
 
 	bra     .next_event
@@ -826,7 +847,7 @@ restore_psg_instr:
 
 	; Fallthrough
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 ; Breaks: d1, d2, a0
 psg_load_instr:
@@ -856,7 +877,7 @@ psg_load_instr:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 ; d0 = channel number
 restore_fm_instr:
@@ -915,7 +936,7 @@ ym_load_instr:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; Subroutine that changes the frequency and does key on/key off on the YM2612
 ;
 ; d3 = The lower byte holds the channel number (0-2, 4-6), while bits 8-A
@@ -980,7 +1001,7 @@ ym_update_freq:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; d0 = register number on lower byte; bit #8 to select part (I or II)
 ; d1 = value
 ; a1 = scratch
@@ -1004,7 +1025,7 @@ ym_write:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
 sound_update_psg:
 	lea     PSG_DATA, a5
@@ -1130,7 +1151,29 @@ sound_update_psg:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+
+; Value to be subtracted from each possible short delay (0-15) to prevent slower
+; music on a PAL system
+;
+; Note: only delays found in the game's soundtrack have been tested
+pal_delay_correction:
+	dc.b    0
+	dc.b    0
+	dc.b    0
+	dc.b    0
+	dc.b    0
+	dc.b    1
+	dc.b    1
+	dc.b    1
+	dc.b    1
+	dc.b    1
+	dc.b    2
+	dc.b    2
+	dc.b    2
+	dc.b    2
+	dc.b    2
+	dc.b    2
 
 note_freqs_fm:
 	dc.w    644  ; C
