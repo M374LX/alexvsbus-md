@@ -2590,7 +2590,7 @@ update_sequence:
 	bra.w   .seq_50  ; 50  - SEQ_GOAL_REACHED
 	bra.w   .seq_51  ; 51
 	bra.w   .seq_52  ; 52
-	bra.w   .seq_53  ; 53
+	bra.w   .ret     ; 53
 	bra.w   .ret     ; 54
 	bra.w   .ret     ; 55
 	bra.w   .ret     ; 56
@@ -2600,7 +2600,7 @@ update_sequence:
 	bra.w   .seq_60  ; 60  - SEQ_GOAL_REACHED_SCENE1
 	bra.w   .seq_61  ; 61
 	bra.w   .seq_62  ; 62
-	bra.w   .ret     ; 63
+	bra.w   .seq_63  ; 63
 	bra.w   .ret     ; 64
 	bra.w   .ret     ; 65
 	bra.w   .ret     ; 66
@@ -2616,7 +2616,7 @@ update_sequence:
 	bra.w   .seq_76  ; 76
 	bra.w   .seq_77  ; 77
 	bra.w   .seq_78  ; 78
-	bra.w   .ret     ; 79
+	bra.w   .seq_79  ; 79
 	bra.w   .seq_80  ; 80  - SEQ_GOAL_REACHED_SCENE3
 	bra.w   .seq_81  ; 81
 	bra.w   .seq_82  ; 82
@@ -2643,7 +2643,7 @@ update_sequence:
 	bra.w   .seq_103 ; 103
 	bra.w   .seq_104 ; 104
 	bra.w   .seq_105 ; 105
-	bra.w   .ret     ; 106
+	bra.w   .seq_106 ; 106
 	bra.w   .ret     ; 107
 	bra.w   .ret     ; 108
 	bra.w   .ret     ; 109
@@ -2900,7 +2900,7 @@ update_sequence:
 	move.b  #COBJ_BIRD, (a0)+
 	clr.b   (a0)+
 	move.w  (RAM_level_size_pixels).w, (a0)
-	subi.w  #496, (a0)+
+	subi.w  #584, (a0)+
 	clr.w   (a0)+
 	move.w  #120, (a0)+
 	clr.w   (a0)+
@@ -2930,40 +2930,13 @@ update_sequence:
 	rts
 
 .seq_52:
-	cmpi.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
-	beq.s   .seq_52_next_step
-	cmpi.b  #COBJ_BIRD, (RAM_cutscene_objs+32).w
-	beq.s   .seq_52_next_step
-
-	move.w  (RAM_bus_x).w, d0
-	addi.w  #342, d0
-	cmp.w   (RAM_player_x).w, d0
-	blt.s   .seq_52_player_jump
-
-	tst.l   (RAM_player_xvel).w
-	ble.s   .seq_52_player_jump
-
-	rts
-
-.seq_52_player_jump:
-	; Player character jumps into the bus
-	move.w  d0, (RAM_player_x).w
-	clr.w   (RAM_player_x+2).w
-	clr.l   (RAM_player_xvel).w
-	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
-
-.seq_52_next_step:
-	addq.b  #1, (RAM_sequence_step).w
-	rts
-
-.seq_53:
 	moveq   #0, d0
 	move.b  (RAM_level_goal_scene).w, d0
-	lea     .seq_53_scene_map(pc), a0
+	lea     .seq_52_scene_map(pc), a0
 	move.b  (a0, d0.w), (RAM_sequence_step).w
 	rts
 
-.seq_53_scene_map:
+.seq_52_scene_map:
 	dc.b    SEQ_GOAL_REACHED_SCENE1
 	dc.b    SEQ_GOAL_REACHED_SCENE2
 	dc.b    SEQ_GOAL_REACHED_SCENE3
@@ -2972,8 +2945,25 @@ update_sequence:
 	even
 
 .seq_60:  ; SEQ_GOAL_REACHED_SCENE1
-	bclr.b  #PLAY_INPUT_JUMP, (RAM_play_input_down).w
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #342, d0
+	cmp.w   (RAM_player_x).w, d0
+	blt.s   .seq_60_player_jump
+	tst.l   (RAM_player_xvel).w
+	ble.s   .seq_60_player_jump
+	rts
 
+.seq_60_player_jump:
+	; Player character jumps into the bus
+	move.w  d0, (RAM_player_x).w
+	clr.w   (RAM_player_x+2).w
+	clr.l   (RAM_player_xvel).w
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
+
+	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
+	rts
+
+.seq_61:
 	tst.l   (RAM_player_yvel).w
 	ble     .ret
 
@@ -2988,7 +2978,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
-.seq_61:
+.seq_62:
 	btst.b  #4, (RAM_play_flags).w ; Check "counting score" flag
 	bne     .ret
 
@@ -2997,13 +2987,30 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_62:
+.seq_63:
 	move.b  #SEQ_BUS_LEAVING, (RAM_sequence_step).w
 	rts
 
 .seq_70:  ; SEQ_GOAL_REACHED_SCENE2
-	bclr.b  #PLAY_INPUT_JUMP, (RAM_play_input_down).w
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #342, d0
+	cmp.w   (RAM_player_x).w, d0
+	blt.s   .seq_70_player_jump
+	tst.l   (RAM_player_xvel).w
+	ble.s   .seq_70_player_jump
+	rts
 
+.seq_70_player_jump:
+	; Player character jumps into the bus
+	move.w  d0, (RAM_player_x).w
+	clr.w   (RAM_player_x+2).w
+	clr.l   (RAM_player_xvel).w
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
+
+	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
+	rts
+
+.seq_71:
 	tst.l   (RAM_player_yvel).w
 	ble     .ret
 
@@ -3017,7 +3024,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w
 	rts
 
-.seq_71:
+.seq_72:
 	btst.b  #4, (RAM_play_flags).w ; Check "counting score" flag
 	bne     .ret
 
@@ -3026,7 +3033,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_72:
+.seq_73:
 	; Close front door
 	move.b  (FPSVAL_0_1_S).w, (RAM_anims+ANIM_BUS_DOOR_FRONT+2).w
 	ori.b   #3, (RAM_anims+ANIM_BUS_DOOR_FRONT+4).w ; Set "running" and "reverse" flags
@@ -3035,7 +3042,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_73:
+.seq_74:
 	; Hide player character
 	clr.b   (RAM_cutscene_objs).w
 
@@ -3060,7 +3067,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_74:
+.seq_75:
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	move.w  (RAM_bus_x).w, d0
@@ -3077,20 +3084,19 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_75:
+.seq_76:
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	; Check if the bearded man has stopped
 	tst.l   10(a0)
-	bge.s   .seq_75_bearded_man_stopped
+	bge.s   .seq_76_bearded_man_stopped
 	move.w  (RAM_bus_x).w, d0
 	addi.w  #337, d0
 	cmp.w   2(a0), d0
-	bge.s   .seq_75_bearded_man_stopped
-
+	bge.s   .seq_76_bearded_man_stopped
 	rts
 
-.seq_75_bearded_man_stopped:
+.seq_76_bearded_man_stopped:
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	; Find X position the bearded man stops at
@@ -3112,7 +3118,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_76:
+.seq_77:
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	; Bearded man jumps into the bus
@@ -3123,7 +3129,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_77:
+.seq_78:
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	move.w  #(BUS_Y+35), d0
@@ -3148,16 +3154,15 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_78:
+.seq_79:
 	move.b  #SEQ_BUS_LEAVING, (RAM_sequence_step).w
 	rts
 
 .seq_80:  ; SEQ_GOAL_REACHED_SCENE3
-	; Check "on floor" flag
-	btst.b  #1, (RAM_player_flags).w
-	beq     .ret
+	cmpi.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
+	bne     .ret
 
-	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
+	move.b  (FPSVAL_0_7_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
@@ -3222,6 +3227,18 @@ update_sequence:
 	rts
 
 .seq_90:   ; SEQ_GOAL_REACHED_SCENE4
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #342, d0
+	cmp.w   (RAM_player_x).w, d0
+	bge.s   .seq_90_player_dest_not_reached
+
+	; Player character stops at bus front door
+	swap.w  d0
+	clr.w   d0
+	move.l  d0, (RAM_player_x).w
+	clr.l   (RAM_player_xvel).w
+.seq_90_player_dest_not_reached:
+
 	lea     (RAM_cutscene_objs+32).w, a0
 
 	move.w  (RAM_bus_x).w, d0
@@ -3245,18 +3262,6 @@ update_sequence:
 	rts
 
 .seq_91:
-	move.w  (RAM_bus_x).w, d0
-	addi.w  #342, d0
-	cmp.w   (RAM_player_x).w, d0
-	bge.s   .seq_91_player_dest_not_reached
-
-	; Player character stops at bus front door
-	swap.w  d0
-	clr.w   d0
-	move.l  d0, (RAM_player_x).w
-	clr.l   (RAM_player_xvel).w
-.seq_91_player_dest_not_reached:
-
 	lea     (RAM_cutscene_objs).w, a0
 
 	move.w  (RAM_player_y).w, d0
@@ -3337,6 +3342,25 @@ update_sequence:
 	rts
 
 .seq_100:  ; SEQ_GOAL_REACHED_SCENE5
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #342, d0
+	cmp.w   (RAM_player_x).w, d0
+	blt.s   .seq_100_player_jump
+	tst.l   (RAM_player_xvel).w
+	ble.s   .seq_100_player_jump
+	rts
+
+.seq_100_player_jump:
+	; Player character jumps into the bus
+	move.w  d0, (RAM_player_x).w
+	clr.w   (RAM_player_x+2).w
+	clr.l   (RAM_player_xvel).w
+	move.b  (FPSVAL_0_2_S).w, (RAM_jump_timeout).w ; Trigger a jump
+
+	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
+	rts
+
+.seq_101:
 	; Bus leaves before the player character can enter it
 	move.l  (FPSVAL_252_PXSS).w, (RAM_bus_acc).w
 	move.l  (FPSVAL_6_PXS).w, (RAM_bus_xvel).w
@@ -3348,7 +3372,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_101: 
+.seq_102:
 	; Wait until the bus is 32 pixels to the right of the level's boundary
 	move.w  (RAM_level_size_pixels).w, d0
 	addi.w  #32, d0
@@ -3378,7 +3402,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_102: 
+.seq_103:
 	lea     (RAM_cutscene_objs).w, a0
 
 	; Wait until the player character is 32 pixels to the right of the
@@ -3396,7 +3420,7 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_103: 
+.seq_104:
 	; Wait until the score count ends
 	btst.b  #4, (RAM_play_flags).w
 	bne     .ret
@@ -3405,14 +3429,14 @@ update_sequence:
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_104: 
+.seq_105:
 	; Screen wipes to black
 	bset.b  #2, (RAM_sequence_flags).w
 	move.b  (FPSVAL_1_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts
 
-.seq_105: 
+.seq_106:
 	move.b  #SEQ_FINISHED, (RAM_sequence_step).w
 	rts
 
@@ -3429,7 +3453,7 @@ update_sequence:
 	lea     (RAM_cutscene_objs+32).w, a0
 	move.b  #COBJ_FLAGMAN, (a0)+
 	clr.b   (a0)+
-	move.w  #((480*2)+32), (a0)+
+	move.w  #992, (a0)+
 	clr.w   (a0)+
 	move.w  #180, (a0)
 
@@ -3498,7 +3522,7 @@ update_sequence:
 	lea     (RAM_cutscene_objs).w, a0
 	move.b  #COBJ_PLAYER_RUN, (a0)+
 	clr.b   (a0)+
-	move.w  #(992-80), (a0)+
+	move.w  #744, (a0)+
 	clr.w   (a0)+
 	move.w  #204, (a0)+
 	clr.w   (a0)+
@@ -3535,7 +3559,7 @@ update_sequence:
 
 	lea     (RAM_cutscene_objs).w, a0
 
-	move.w  #(992+136), d0
+	move.w  #1128, d0
 	cmp.w   2(a0), d0
 	bge     .ret
 
@@ -3563,7 +3587,7 @@ update_sequence:
 	addi.l  #(8<<16), 2(a0)
 .seq_116_no_player_change:
 
-	move.w  #(992+224), d0
+	move.w  #1216, d0
 	cmp.w   2(a0), d0
 	blt.s   .seq_116_player_stopped
 	tst.l   10(a0)
@@ -3618,7 +3642,7 @@ update_sequence:
 	rts
 
 .seq_119:
-	move.w  #(992-232), d0
+	move.w  #760, d0
 	move.w  d0, (RAM_hen_x).w
 	clr.w   (RAM_hen_x+2).w
 
@@ -3635,7 +3659,7 @@ update_sequence:
 	rts
 
 .seq_120:
-	move.w  #(992-48), d0
+	move.w  #944, d0
 	cmp.w   (RAM_hen_x).w, d0
 	bge     .ret
 
@@ -3667,7 +3691,7 @@ update_sequence:
 	bset.b  #4, (RAM_sequence_flags).w
 .seq_121_no_flag_swing:
 
-	move.w  #(992+184), d0
+	move.w  #1176, d0
 	cmp.w   (RAM_hen_x).w, d0
 	blt.s   .seq_121_hen_stopped
 	tst.l   (RAM_hen_xvel).w
@@ -3702,7 +3726,7 @@ update_sequence:
 	rts
 
 .seq_123:
-	move.w  #(992-228), d0
+	move.w  #764, d0
 	cmp.w   (RAM_bus_x).w, d0
 	bge     .ret
 
