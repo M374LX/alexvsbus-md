@@ -1737,7 +1737,7 @@ add_play_sprites:
 
 .overhead_sign_bases_loop:
 	move.w  (a2)+, d1 ; X
-	move.w  (a2)+, d2 ; Y
+	move.w  (a2)+, d4 ; Y
 
 	sub.w   (RAM_draw_offset_x).w, d1
 
@@ -1750,24 +1750,32 @@ add_play_sprites:
 	cmpi.w  #SCREEN_W, d1
 	bge.s   .overhead_sign_bases_done
 
-	sub.w   (RAM_draw_offset_y).w, d2
+	sub.w   (RAM_draw_offset_y).w, d4
 
 	addi.w  #(16+128), d1
-	addi.w  #(8+128), d2
+	addi.w  #(8+128), d4
 
 	; Add sign top right sprite
 	move.w  #$2000|SPR_OVERHEAD_SIGN_TOP_RIGHT, d0
+	move.w  d4, d2
 	move.w  #$7, d3
 	bsr     add_sprite_simple
 
 	addq.w  #8, d1
 
+	; Sprite size for base middle and bottom sprites
 	moveq   #$2, d3
-	move.w  #$2000|SPR_OVERHEAD_SIGN_MIDDLE, d0
 
-	; Draw base middle sprite and check if it is time to draw the bottom
-	; sprite; also, ensure it is low priority if high enough on the screen
-	; (so it does not appear over the HUD) and high priority otherwise
+	; Draw base bottom sprite
+	move.w  #$2000|SPR_OVERHEAD_SIGN_BOTTOM, d0
+	move.w  d5, d2
+	bsr     add_sprite_simple
+
+	; Draw base middle sprites and ensure it is low priority if high enough
+	; on the screen (so it does not appear over the HUD) and high priority
+	; otherwise
+	move.w  d4, d2
+	move.w  #$2000|SPR_OVERHEAD_SIGN_MIDDLE, d0
 .overhead_sign_bases_middle_next:
 	add.w   d6, d2
 	cmpi.w  #(32+128), d2
@@ -1775,15 +1783,9 @@ add_play_sprites:
 	bset.l  #$F, d0 ; High priority
 .overhead_sign_bases_middle_loprio:
 	cmp.w   d5, d2
-	bge.s   .overhead_sign_bases_bottom
+	bge.s   .overhead_sign_bases_next
 	bsr     add_sprite_simple
 	bra.s   .overhead_sign_bases_middle_next
-
-.overhead_sign_bases_bottom:
-	; Draw base bottom sprite
-	move.w  #$2000|SPR_OVERHEAD_SIGN_BOTTOM, d0
-	move.w  d5, d2
-	bsr     add_sprite_simple
 
 .overhead_sign_bases_next:
 	dbf     d7, .overhead_sign_bases_loop
@@ -2216,7 +2218,7 @@ add_play_sprites:
 	move.w  #(128+263), d2
 	sub.w   (RAM_draw_offset_y).w, d2
 	move.w  #SPR_GUSH_HOLE, d0
-	moveq   #7, d3
+	moveq   #6, d3
 	bsr     add_sprite_simple
 
 	; Store the Y position of the gush in d2
@@ -2240,7 +2242,7 @@ add_play_sprites:
 	bsr     add_sprite_simple
 
 	; Store maximum Y position for a gush middle sprite in d5
-	move.w  #(128+266), d5
+	move.w  #(128+264), d5
 	sub.w   (RAM_draw_offset_y).w, d5
 
 	; Find sprite corresponding to gush middle animation frame

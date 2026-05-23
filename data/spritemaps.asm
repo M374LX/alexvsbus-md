@@ -190,7 +190,7 @@ DATA_spritemap_deep_hole_left_fg:
 	dc.w 0, 0, $9, $0000|SPR_DEEP_HOLE_LEFT_FG
 
 DATA_spritemap_passageway_left_fg:
-	dc.w 0, 0, $E, $0000|SPR_PASSAGEWAY_LEFT_FG
+	dc.w 0, 0, $9, $0000|SPR_PASSAGEWAY_LEFT_FG
 
 DATA_spritemap_passageway_right_fg:
 	dc.w 0, 0, $9, $0000|SPR_PASSAGEWAY_RIGHT_FG
