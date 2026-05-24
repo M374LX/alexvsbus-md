@@ -161,24 +161,25 @@ renderer_handle_wipe:
 
 	tst.b   (RAM_wipe_delay).w
 	beq.s   .no_delay
+
 	subq.b  #1, (RAM_wipe_delay).w
-	bra.s   .set_wipe_flag
+	bra.s   .do_wipe_cmd
 
 .no_delay:
-	cmpi.b  #16, (RAM_wipe_value).w
-	bhs.s   .set_wipe_flag
+	cmpi.b  #(SCREEN_H/(8*2)), (RAM_wipe_value).w
+	bhi.s   .do_wipe_cmd
 
+	; Start wipe delay
 	move.b  #1, (RAM_wipe_delay).w
+
+	; Update wipe value
 	move.b  (RAM_wipe_delta).w, d0
 	add.b   d0, (RAM_wipe_value).w
 
 	; Prevent wipe value from going negative
 	tst.b   (RAM_wipe_value).w
-	bge.s   .set_wipe_flag
+	bge.s   .do_wipe_cmd
 	clr.b   (RAM_wipe_value).w
-
-.set_wipe_flag:
-	bset.b  #0, (RAM_wipe_flags).w
 
 .do_wipe_cmd:
 	move.b  (RAM_wipe_cmd).w, d0
@@ -191,29 +192,29 @@ renderer_handle_wipe:
 	beq.s   .wipe_cmd_clear ; WIPECMD_CLEAR
 
 .wipe_cmd_in:
-	move.b  #14, (RAM_wipe_value).w
+	move.b  #(SCREEN_H/(8*2)), (RAM_wipe_value).w
 	move.b  #-1, (RAM_wipe_delta).w
-
 	move.b  #1, (RAM_wipe_delay).w
-
 	bra.s   .wipe_cmd_done
 
 .wipe_cmd_out:
 	clr.b   (RAM_wipe_value).w
 	move.b  #1, (RAM_wipe_delta).w
-
 	move.b  #1, (RAM_wipe_delay).w
-
 	bra.s   .wipe_cmd_done
 
 .wipe_cmd_clear:
 	clr.b   (RAM_wipe_value).w
-	bclr.b  #0, (RAM_wipe_flags).w
 	clr.b   (RAM_wipe_delta).w
 	clr.b   (RAM_wipe_delay).w
 
 .wipe_cmd_done:
 	clr.b   (RAM_wipe_cmd).w
+
+	tst.b   (RAM_wipe_value).w
+	beq.s   .dont_enable_wipe
+	st.b    (RAM_wipe_enabled).w
+.dont_enable_wipe:
 
 	; Handle initial screen blanking
 	move.w  #$8164, d0 ; Enable display and VBlank
@@ -266,7 +267,7 @@ wait_vblank:
 	cmp.l   (RAM_vtimer).w, d0
 	beq.s   .wait
 
-	bclr.b  #0, (RAM_wipe_flags).w
+	clr.b   (RAM_wipe_enabled).w
 
 	rts
 

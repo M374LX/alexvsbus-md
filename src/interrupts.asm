@@ -33,12 +33,12 @@ int_error:
 ; ------------------------------------------------------------------------------
 
 int_hblank:
-	btst.b  #0, (RAM_wipe_flags).w
+	tst.b   (RAM_wipe_enabled).w
 	bne.s   .wiping
 	rte
 
 .wiping:
-	movem.l d0/a0, -(sp)
+	movem.l d0-d1/a0, -(sp)
 
 	lea     VDP_CTRL, a0
 	move.b  4(a0), d0
@@ -47,13 +47,31 @@ int_hblank:
 	cmpi.b  #SCREEN_H, d0
 	bhs.s   .ret
 
-	lsr.b   #4, d0
-	cmp.b   (RAM_wipe_value).w, d0
-	bne.s   .ret
+	move.b   (RAM_wipe_value).w, d1
+	beq.s   .ret
+
+	cmpi.b  #(SCREEN_H/(8*2)), d1
+	bhs.s   .ret
+
+	lsr.b   #3, d0
+	cmp.b   d0, d1
+	beq.s   .wipe_top
+
+	move.b  #(SCREEN_H/8), d1
+	sub.b   (RAM_wipe_value).w, d1
+	cmp.b   d0, d1
+	beq.s   .wipe_bottom
+	bra.s   .ret
+
+.wipe_top:
 	move.w  #$8164, (a0)
+	bra.s   .ret
+
+.wipe_bottom:
+	move.w  #$8124, (a0)
 
 .ret:
-	movem.l (sp)+, d0/a0
+	movem.l (sp)+, d0-d1/a0
 	rte
 
 ; ------------------------------------------------------------------------------

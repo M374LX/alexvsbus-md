@@ -50,7 +50,7 @@ startup:
 	move.w  #$8400+($E000>>13), (a0) ; Plane B address
 	move.w  #$8500+($AC00>>9),  (a0) ; Sprite table address
 	move.w  #$8700, (a0)    ; Background color: palette 0, index 0
-	move.w  #$8A0F, (a0)    ; Horizontal interrupt rate
+	move.w  #$8A07, (a0)    ; Horizontal interrupt rate
 	move.w  #$8B00, (a0)    ; Full screen scroll, no external interrupts
 	move.w  #$8C81, (a0)    ; H40, no S/H, no double-res, no interlace
 	move.w  #$8D00+($A800>>10), (a0) ; HScroll data address

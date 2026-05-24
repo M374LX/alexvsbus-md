@@ -43,9 +43,8 @@ RAM_progress_difficulty:       equ $FFFF8012
 RAM_progress_level:            equ $FFFF8013
 RAM_progress_cheat_pos:        equ $FFFF8014
 
-; The flags are:
-; 0 - Wipe effect happening and VDP not locked for Hint
-RAM_wipe_flags:                equ $FFFF8020
+; Set if a wipe effect is happening and the VDP is not locked for Hint
+RAM_wipe_enabled:              equ $FFFF8020
 
 RAM_wipe_cmd:                  equ $FFFF8022
 RAM_wipe_value:                equ $FFFF8024
