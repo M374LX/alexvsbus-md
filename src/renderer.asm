@@ -1767,7 +1767,7 @@ add_play_sprites:
 	moveq   #$2, d3
 
 	; Draw base bottom sprite
-	move.w  #$2000|SPR_OVERHEAD_SIGN_BOTTOM, d0
+	move.w  #$A000|SPR_OVERHEAD_SIGN_BOTTOM, d0
 	move.w  d5, d2
 	bsr     add_sprite_simple
 
@@ -2032,7 +2032,7 @@ add_play_sprites:
 	beq.s   .skip_medal_3
 
 	move.w  (RAM_bus_x).w, d0
-	addi.w  #(343+4), d0
+	addi.w  #347, d0
 	move.w  #120, d1
 	moveq   #1, d2
 
