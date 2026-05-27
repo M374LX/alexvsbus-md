@@ -36,9 +36,9 @@ DATA_fm_instr_list:
 	dc.l 0
 
 DATA_psg_instr_list:
-	dc.l psg_instr_0
-	dc.l 0
-	dc.l 0
+	dc.l psg_instr_00
+	dc.l psg_instr_01
+	dc.l psg_instr_02
 	dc.l 0
 	dc.l 0
 	dc.l 0
@@ -142,8 +142,16 @@ instr_lead:
 	incbin 'data/lead.eif'
 	even
 
-psg_instr_0:
+psg_instr_00:
 	incbin 'data/silence.eef'
+	even
+
+psg_instr_01:
+	incbin 'data/psg1.eef'
+	even
+
+psg_instr_02:
+	incbin 'data/psg2.eef'
 	even
 
 psg_instr_10:

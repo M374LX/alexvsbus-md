@@ -41,6 +41,4 @@ before it is built. With the tools in the ``tools`` directory built, the
 - Document data formats, including levels and music streams
 - Document tools in the ``tools`` directory
 - Add more comments to the code
-- Add the missing square wave channel to the title BGM track
-
 

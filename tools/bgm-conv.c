@@ -30,6 +30,7 @@ struct {
 		int octave;
 		int instr;
 		int effect;
+		int effect_param;
 	} chans[9];
 } rows[4096];
 
@@ -156,6 +157,7 @@ void read_file(FILE* f)
 				int octave = 0;
 				int instr = -1;
 				int effect = -1;
+				int effect_param = 0;
 
 				chan_buf = &buf[15 * chan];
 
@@ -186,10 +188,17 @@ void read_file(FILE* f)
 					effect |= hex_digit(chan_buf[15]);
 				}
 
+				//Determine effect parameter
+				if (chan_buf[16] != '.') {
+					effect_param  = hex_digit(chan_buf[16]) << 4;
+					effect_param |= hex_digit(chan_buf[17]);
+				}
+
 				rows[num_rows].chans[chan].note   = note;
 				rows[num_rows].chans[chan].octave = octave;
 				rows[num_rows].chans[chan].instr  = instr;
 				rows[num_rows].chans[chan].effect = effect;
+				rows[num_rows].chans[chan].effect_param = effect_param;
 			}
 
 			num_rows++;
@@ -243,7 +252,16 @@ void process()
 
 			if (instr != -1 && instr != chan_instrs[chan]) {
 				out_write_byte(0x40 + esf_chan(chan));
-				out_write_byte(instr);
+
+				//While Furnace uses a single set for all instruments, the game
+				//uses separate sets for FM and PSG instruments, with 4 being
+				//the first number used in Furnace project files for PSG
+				//instruments
+				if (chan >= 6) {
+					out_write_byte(instr - 4);
+				} else {
+					out_write_byte(instr);
+				}
 
 				chan_instrs[chan] = instr;
 			}
@@ -273,8 +291,23 @@ void process()
 							out_write_byte(0x01);
 						}
 					} else if (chan < 9) { //PSG tone channel
-						out_write_byte(24 * octave + 2 * note);
+						out_write_byte(24 * (octave - 1) + 2 * note);
 					}
+				}
+			}
+		}
+
+		//Insert vibrato effects (PSG tone channels only)
+		for (chan = 6; chan < 9; chan++) {
+			if (rows[row].chans[chan].effect == 0x04) {
+				new_delay = true;
+
+				if (rows[row].chans[chan].effect_param == 0) {
+					//Disable vibrato
+					out_write_byte(0xC0 + esf_chan(chan));
+				} else {
+					//Enable vibrato
+					out_write_byte(0xB0 + esf_chan(chan));
 				}
 			}
 		}

@@ -38,11 +38,11 @@ SOUNDRAM_flags: equ RAM_sound+$00
 SOUNDRAM_locked_channels: equ RAM_sound+$02
 
 ; Stream properties:
-; +$00 (W) - position
-; +$02 (W) - remaining ticks for next event
-; +$04 (B) - playing (boolean)
-; +$06 (W) - loop start position
-; +$08 (L) - start location
+; +$00 (W) - Position
+; +$02 (W) - Remaining ticks for next event
+; +$04 (B) - Playing (boolean)
+; +$06 (W) - Loop start position
+; +$08 (L) - Start location
 SOUNDRAM_stream_bgm: equ RAM_sound+$10
 SOUNDRAM_stream_sfx: equ RAM_sound+$20
 
@@ -72,10 +72,19 @@ SOUNDRAM_instrs: equ RAM_sound+$30
 ; +$1D (B) - Channel 4 current envelope position
 ; +$1E (W) - Channel 4 noise type
 ;
-; For the frequency or noise type of each channel, $0000 means no change, $FFFF
-; means note off, and setting the highest bit means key on (restart envelope)
+; For the frequency or noise type of each channel, $0000 means no change and
+; $FFFF means note off
 ;
 SOUNDRAM_psg_instrs: equ RAM_sound+$40
+
+; Two words (four bytes) for each of the PSG tone channels
+;
+; For each channel, the first word is the base frequency and the second word is
+; the vibrato position
+SOUNDRAM_vibrato: equ RAM_sound+$60
+
+; One bit for each PSG tone channel determining whether vibrato is enabled
+SOUNDRAM_vibrato_enable:  equ RAM_sound+$70
 
 ; ------------------------------------------------------------------------------
 
@@ -169,6 +178,9 @@ sound_init:
 ; Breaks: d0, a0, a1
 sound_play_bgm:
 	bclr.b  #0, SOUNDRAM_flags ; Clear "paused" flag
+
+	; Disable vibrato on all PSG tone channels
+	clr.b   SOUNDRAM_vibrato_enable
 
 	add.w   d0, d0
 	add.w   d0, d0
@@ -310,6 +322,7 @@ sound_update:
 
 	z80_resume
 
+	bsr     sound_update_vibrato
 	bra     sound_update_psg
 
 ; ------------------------------------------------------------------------------
@@ -385,6 +398,10 @@ sound_handle_events:
 	bls     .ev_set_instr_fm
 	cmpi.b  #$4B, d0
 	bls     .ev_set_instr_psg
+	cmpi.b  #$BA, d0
+	bls     .ev_enable_vibrato_psg
+	cmpi.b  #$CA, d0
+	bls     .ev_disable_vibrato_psg
 	cmpi.b  #$DF, d0
 	bls     .ev_delay_short
 	cmpi.b  #$E6, d0
@@ -445,21 +462,32 @@ sound_handle_events:
 	; Move next parameter (the musical note) do d1
 	move.b  (a0), d1
 
-	; Keep channel number in d0
-	andi.w  #3, d0
-
-	; Find address for channel's next frequency and store it in a0
-	lea     SOUNDRAM_psg_instrs, a0
-	lsl.w   #3, d0
-	adda.w  d0, a0
-	adda.w  #6, a0
+	; Keep channel number in d2
+	move.b  d0, d2
+	andi.w  #3, d2
 
 	; Find frequency corresponding to note and store it in d1
 	lea     note_freqs_psg(pc), a1
 	move.w  (a1, d1.w), d1
 
-	; Store the frequency with the highest bit (meaning key on) set
-	ori.w   #$8000, d1
+	; Set base frequency for vibrato
+	lea     SOUNDRAM_vibrato, a0
+	move.w  d2, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	move.w  d1, (a0, d0.w)
+
+	; Find address for channel within SOUNDRAM_psg_instrs
+	lea     SOUNDRAM_psg_instrs, a0
+	move.w  d2, d0
+	lsl.w   #3, d0
+	adda.w  d0, a0
+	addq.w  #4, a0
+
+	; Reset envelope
+	clr.w   (a0)+
+
+	; Set frequency
 	move.w  d1, (a0)
 
 	bra     .next_event
@@ -477,11 +505,14 @@ sound_handle_events:
 	andi.w  #$FFFF, d1
 	ori.b   #$E0, d1
 
-	; Store the address for the channel's next noise type in a0
-	lea     SOUNDRAM_psg_instrs+$1E, a0
+	; Store the address for the noise channel within SOUNDRAM_psg_instrs
+	; in a0
+	lea     SOUNDRAM_psg_instrs+$1C, a0
 
-	; Store the noise type with the highest bit (meaning key on) set
-	ori.w   #$8000, d1
+	; Reset envelope
+	clr.w   (a0)+
+
+	; Set noise type
 	move.w  d1, (a0)
 
 	bra     .next_event
@@ -538,17 +569,33 @@ sound_handle_events:
 	btst.l  #$10, d0
 	bne     .next_event
 
-	; Keep channel number in d0
-	andi.w  #3, d0
+	; Keep channel number in d2
+	move.b  d0, d2
+	andi.w  #3, d2
 
-	; Find the address for the channel's next frequency and store it in a0
+	; Find the address for the channel within SOUNDRAM_psg_instrs
 	lea     SOUNDRAM_psg_instrs, a0
-	lsl.b   #3, d0
+	move.w  d2, d0
+	lsl.w   #3, d0
 	adda.w  d0, a0
-	adda.w  #6, a0
+	addq.w  #4, a0
 
-	; Set channel's frequency to $FFFF, meaning note off
+	; Reset envelope
+	clr.w   (a0)+
+
+	; Set channel's frequency to $FFFF, meaning silence
 	move.w  #$FFFF, (a0)
+
+	; No vibrato if it is the noise channel
+	cmpi.w  #3, d2
+	beq     .next_event
+
+	; Clear vibrato base frequency
+	lea     SOUNDRAM_vibrato, a0
+	move.w  d2, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	clr.w   (a0, d0.w)
 
 	bra     .next_event
 
@@ -593,16 +640,25 @@ sound_handle_events:
 	lsl.w   #4, d1
 	or.b    (a0), d1
 
-	; Keep channel number in d0
-	andi.w  #3, d0
+	; Keep channel number in d2
+	move.b  d0, d2
+	andi.w  #3, d2
 
-	; Find the address for the channel's next frequency and store it in a0
+	; Set base frequency for vibrato
+	lea     SOUNDRAM_vibrato, a0
+	move.w  d2, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	move.w  d1, (a0, d0.w)
+
+	; Find address for channel within SOUNDRAM_psg_instrs
 	lea     SOUNDRAM_psg_instrs, a0
-	lsl.b   #3, d0
+	move.w  d2, d0
+	lsl.w   #3, d0
 	adda.w  d0, a0
-	adda.w  #6, a0
+	addq.w  #6, a0
 
-	; Store the frequency with the highest bit (meaning key on) unset
+	; Set frequency
 	move.w  d1, (a0)
 
 	bra     .next_event
@@ -622,7 +678,7 @@ sound_handle_events:
 	; Store the address for the channel's next noise in a0
 	lea     SOUNDRAM_psg_instrs+$1E, a0
 
-	; Store the noise type with the highest bit (meaning key on) set
+	; Store noise type
 	move.w  d1, (a0)
 
 	bra     .next_event
@@ -676,6 +732,39 @@ sound_handle_events:
 	bne     .next_event
 
 	bsr     psg_load_instr
+
+	bra     .next_event
+
+.ev_enable_vibrato_psg:
+	; Advance to next event position
+	addq.w  #1, (a2)
+
+	; Keep channel number in d2
+	move.w  d0, d2
+	andi.w  #7, d2
+
+	; Enable vibrato
+	bset.b  d2, SOUNDRAM_vibrato_enable
+
+	; Reset vibrato position
+	lea     SOUNDRAM_vibrato, a0
+	move.w  d2, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	clr.b   (a0, d0.w)
+
+	bra     .next_event
+
+.ev_disable_vibrato_psg:
+	; Advance to next event position
+	addq.w  #1, (a2)
+
+	; Keep channel number in d2
+	move.w  d0, d2
+	andi.w  #7, d2
+
+	; Disable vibrato
+	bclr.b  d2, SOUNDRAM_vibrato_enable
 
 	bra     .next_event
 
@@ -1027,6 +1116,45 @@ ym_write:
 
 ; ------------------------------------------------------------------------------
 
+sound_update_vibrato:
+	lea     SOUNDRAM_vibrato, a0
+	lea     SOUNDRAM_psg_instrs, a1
+	lea     psg_vibrato_table(pc), a2
+	moveq   #0, d6 ; Channel number (0, 1, 2)
+	moveq   #(3-1), d7 ; Number of PSG tone channels minus one
+.channels_loop:
+	; Skip channel if vibrato is not enabled on it
+	btst.b  d6, SOUNDRAM_vibrato_enable
+	beq.s   .next_channel
+
+	; Skip channel if it is silent
+	tst.w   (a0)
+	beq.s   .next_channel
+
+	; Apply vibrato
+	move.w  d6, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	move.w  2(a0, d0.w), d0
+	add.w   d0, d0
+	move.w  (a2, d0.w), d0
+	add.w   (a0), d0
+	move.w  d0, 6(a1)
+
+	; Advance vibrato position
+	addq.w  #1, 2(a0)
+	andi.w  #7, 2(a0)
+
+.next_channel:
+	addq.w  #1, d6
+	addq.w  #4, a0
+	addq.w  #8, a1
+	dbf     d7, .channels_loop
+
+	rts
+
+; ------------------------------------------------------------------------------
+
 sound_update_psg:
 	lea     PSG_DATA, a5
 	lea     SOUNDRAM_psg_instrs, a6
@@ -1046,7 +1174,7 @@ sound_update_psg:
 	tst.w   d6
 	beq.s   .advance_envelope
 
-	; Check for note off/silent channel
+	; Check for silent channel
 	cmpi.w  #$FFFF, d6
 	bne.s   .no_silence
 
@@ -1055,11 +1183,7 @@ sound_update_psg:
 	ori.b   #$9F, d0
 	move.b  d0, (a5)
 
-	; Restart envelope
-	clr.b   4(a6)
-	clr.b   5(a6)
-
-	bra.s   .next_channel
+	bra     .next_channel
 
 .no_silence:
 	; Store frequency in d1 with key on bit cleared
@@ -1082,22 +1206,13 @@ sound_update_psg:
 	lsr.w   #4, d1
 	move.b  d1, (a5)
 
-	bra.s   .check_key_on
+	bra.s   .reset_new_note
 
 .noise_channel:
 	; Write the new noise type value on the PSG
 	move.b  d1, d0
 	ori.b   #$E0, d0
 	move.b  d0, (a5)
-
-.check_key_on:
-	; If the key on bit is cleared, skip the envelope restart
-	btst.l  #$F, d6
-	beq.s   .reset_new_note
-
-.restart_envelope:
-	clr.b   4(a6)
-	clr.b   5(a6)
 
 .reset_new_note:
 	clr.w   6(a6)
@@ -1152,6 +1267,16 @@ sound_update_psg:
 	rts
 
 ; ------------------------------------------------------------------------------
+
+psg_vibrato_table:
+	dc.w 0
+	dc.w 2
+	dc.w 4
+	dc.w 2
+	dc.w 0
+	dc.w -2
+	dc.w -4
+	dc.w -2
 
 ; Value to be subtracted from each possible short delay (0-15) to prevent slower
 ; music on a PAL system

@@ -30,10 +30,10 @@
 ./tools/sprites-conv ./assets/sprites-list ./assets/sprites.png ./data/sprites.bin
 
 # BGM tracks
-./tools/bgm-conv ./assets/bgm1.txt ./data/bgm1.bin
-./tools/bgm-conv ./assets/bgm2.txt ./data/bgm2.bin
-./tools/bgm-conv ./assets/bgm3.txt ./data/bgm3.bin
-./tools/bgm-conv ./assets/bgmtitle.txt ./data/bgmtitle.bin
+./tools/bgm-conv ./assets/bgm1.fur.txt ./data/bgm1.bin
+./tools/bgm-conv ./assets/bgm2.fur.txt ./data/bgm2.bin
+./tools/bgm-conv ./assets/bgm3.fur.txt ./data/bgm3.bin
+./tools/bgm-conv ./assets/bgmtitle.fur.txt ./data/bgmtitle.bin
 
 # Normal levels
 ./tools/level-conv ./assets/level1n ./data/level1n.bin

@@ -485,7 +485,7 @@ start_level:
 	cmpi.w  #OBJ_GUSH, (a0)
 	bne.s   .gushes_next_obj
 
-	move.w  #232, (a1)+; TODO: GUSH_INITIAL_Y constant
+	move.w  #232, (a1)+
 	clr.w   (a1)+
 	move.l  d0,   (a1)+
 	move.w  d1, (a1)+
