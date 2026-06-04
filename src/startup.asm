@@ -34,7 +34,7 @@ startup:
 	move.l  #'SEGA', $A14000
 .no_tmss:
 	move.w  #$2700, sr ; Supervisor mode, interrupts disabled
-	movea.l #0, sp ; Set stack pointer
+	movea.l #0, sp     ; Set stack pointer
 
 	; Store VDP control port address in a0
 	lea     VDP_CTRL, a0
@@ -43,14 +43,14 @@ startup:
 	tst.w   (a0)
 
 	; Initialize VDP registers
-	move.w  #$8014, (a0)    ; Enable HBlank interrupt
-	move.w  #$8114, (a0)    ; No display, no IRQ6, DMA OK, V28
+	move.w  #$8004, (a0)    ; Show leftmost column, no HBL interrupt, no HV freeze
+	move.w  #$8104, (a0)    ; No display, no VBL interrupt, no DMA, V28
 	move.w  #$8200+($C000>>10), (a0) ; Plane A address
 	move.w  #$8300+($B000>>10), (a0) ; Window address
 	move.w  #$8400+($E000>>13), (a0) ; Plane B address
 	move.w  #$8500+($AC00>>9),  (a0) ; Sprite table address
 	move.w  #$8700, (a0)    ; Background color: palette 0, index 0
-	move.w  #$8A07, (a0)    ; Horizontal interrupt rate
+	move.w  #$8A00, (a0)    ; Horizontal interrupt rate
 	move.w  #$8B00, (a0)    ; Full screen scroll, no external interrupts
 	move.w  #$8C81, (a0)    ; H40, no S/H, no double-res, no interlace
 	move.w  #$8D00+($A800>>10), (a0) ; HScroll data address
@@ -59,9 +59,11 @@ startup:
 	move.w  #$9100, (a0)    ; Hide window plane
 	move.w  #$9200, (a0)    ; Hide window plane
 
+	; Clear d0 so it can be used to clear RAM, VRAM, CRAM, and VSRAM
+	moveq   #0, d0
+
 	; Clear RAM
 	lea     $FF0000, a0
-	moveq   #0, d0
 	move.w  #(65536/4)-1, d1 ; RAM size
 .ram_clear_loop:
 	move.l  d0, (a0)+
@@ -71,7 +73,6 @@ startup:
 	lea     VDP_DATA, a0
 
 	; Clear VRAM
-	moveq   #0, d0
 	move.w  #(65536/4)-1, d1 ; VRAM size
 	move.l  #$40000000, 4(a0)
 .vram_clear_loop:
@@ -79,7 +80,6 @@ startup:
 	dbf     d1, .vram_clear_loop
 
 	; Clear CRAM
-	moveq   #0, d0
 	move.w  #(128/4)-1, d1 ; CRAM size
 	move.l  #$C0000000, 4(a0)
 .cram_clear_loop:
@@ -87,7 +87,6 @@ startup:
 	dbf     d1, .cram_clear_loop
 
 	; Clear VSRAM
-	moveq   #0, d0
 	move.w  #(80/4)-1, d1 ; VSRAM size
 	move.l  #$40000010, 4(a0)
 .vsram_clear_loop:
@@ -98,8 +97,7 @@ startup:
 	move.b  #$40, $A10009
 	move.b  #$40, $A10003
 
-	; Clear data registers
-	moveq   #0, d0
+	; Clear data registers (d0 is already cleared)
 	moveq   #0, d1
 	moveq   #0, d2
 	moveq   #0, d3

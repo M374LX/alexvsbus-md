@@ -36,7 +36,10 @@ renderer_init:
 	move.l  (a1)+, (a0)
 	dbf     d7, .charset_load_loop
 
-	move.w  #$8124, 4(a0) ; Disable display and enable VBlank
+	addq.w  #4, a0       ; Point a0 to VDP control port
+	move.w  #$8014, (a0) ; Enable HBL interrupt
+	move.w  #$8124, (a0) ; Disable display and enable VBL interrupt
+	move.w  #$8A07, (a0) ; Set HBL interrupt rate
 
 	rts
 
