@@ -1269,14 +1269,14 @@ sound_update_psg:
 ; ------------------------------------------------------------------------------
 
 psg_vibrato_table:
-	dc.w 0
-	dc.w 2
-	dc.w 4
-	dc.w 2
-	dc.w 0
-	dc.w -2
-	dc.w -4
-	dc.w -2
+	dc.w    0
+	dc.w    2
+	dc.w    4
+	dc.w    2
+	dc.w    0
+	dc.w    -2
+	dc.w    -4
+	dc.w    -2
 
 ; Value to be subtracted from each possible short delay (0-15) to prevent slower
 ; music on a PAL system
