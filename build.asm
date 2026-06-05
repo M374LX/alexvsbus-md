@@ -11,6 +11,7 @@
 	include 'src/renderer.asm'
 	include 'src/sound.asm'
 
+	include 'data/sprite-constants.asm'
 	include 'data/luts.asm'
 	include 'data/fps-values.asm'
 	include 'data/menu.asm'

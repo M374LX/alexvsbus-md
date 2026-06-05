@@ -29,6 +29,9 @@
 # Sprites tileset
 ./tools/sprites-conv ./assets/sprites-list ./assets/sprites.png ./data/sprites.bin
 
+# Sprite constants
+./tools/gen-sprite-constants ./assets/sprites-list > ./data/sprite-constants.asm
+
 # BGM tracks
 ./tools/bgm-conv ./assets/bgm1.fur.txt ./data/bgm1.bin
 ./tools/bgm-conv ./assets/bgm2.fur.txt ./data/bgm2.bin

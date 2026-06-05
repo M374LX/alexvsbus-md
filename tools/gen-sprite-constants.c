@@ -23,7 +23,7 @@
 int main(int argc, char* argv[])
 {
 	FILE* fp;
-	char buffer[128];
+	char buffer[80];
 	int sprite_num = 0;
 
 	if (argc < 2) {
@@ -41,11 +41,13 @@ int main(int argc, char* argv[])
 	}
 
 	while (!feof(fp)) {
+		char out_line[64];
 		int len;
 		int w;
 		int h;
+		int i;
 
-		if (fgets(buffer, 124, fp) == NULL) {
+		if (fgets(buffer, 80, fp) == NULL) {
 			break;
 		}
 
@@ -63,10 +65,37 @@ int main(int argc, char* argv[])
 		w = buffer[0] - '0';
 		h = buffer[2] - '0';
 
-		printf("%s: equ SPR_INITIAL+$%04X\n", &buffer[6], sprite_num);
+		out_line[63] = '\0';
+
+		//Fill out_line with spaces
+		for (i = 0; i < 63; i++) {
+			out_line[i] = ' ';
+		}
+
+		//Copy sprite name into the start of out_line
+		i = 0;
+		while (1) {
+			char c = buffer[6 + i];
+
+			if (c == '\0' || c == '\n') {
+				break;
+			}
+
+			out_line[i] = c;
+
+			i++;
+		}
+
+		out_line[i] = ':';
+		snprintf(&out_line[32], 32, "equ SPR_INITIAL+$%04X", sprite_num);
+
+		puts(out_line);
 
 		sprite_num += ((w + 1) * (h + 1));
 	}
+
+	//Add a blank line at the end
+	puts("");
 
 	fclose(fp);
 
