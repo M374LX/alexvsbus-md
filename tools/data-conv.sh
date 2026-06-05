@@ -38,6 +38,9 @@
 ./tools/bgm-conv ./assets/bgm3.fur.txt ./data/bgm3.bin
 ./tools/bgm-conv ./assets/bgmtitle.fur.txt ./data/bgmtitle.bin
 
+# Frame rate-dependent value
+./tools/fps-values-conv ./assets/fps-values > ./data/fps-values.asm
+
 # Normal levels
 ./tools/level-conv ./assets/level1n ./data/level1n.bin
 ./tools/level-conv ./assets/level2n ./data/level2n.bin

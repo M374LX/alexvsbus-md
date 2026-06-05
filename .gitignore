@@ -6,6 +6,8 @@
 /tools/bgm-conv.exe
 /tools/fix-rom
 /tools/fix-rom.exe
+/tools/fps-values-conv
+/tools/fps-values-conv.exe
 /tools/gen-sprite-constants
 /tools/gen-sprite-constants.exe
 /tools/level-conv
