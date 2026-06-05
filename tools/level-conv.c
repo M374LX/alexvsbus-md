@@ -191,7 +191,7 @@ static void find_tokens(const char* str, int* tokens)
 			tokens[num_tokens] = i;
 			num_tokens++;
 		}
-	} 
+	}
 }
 
 static void add_coin(bool gold, int x, int y)

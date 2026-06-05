@@ -123,7 +123,7 @@ flush_sprites:
 	moveq   #1, d0
 .sprite_link_loop:
 	move.b  d0, (a1)
-	lea     8(a1), a1  
+	lea     8(a1), a1
 	addq.b  #1, d0
 	dbf     d7, .sprite_link_loop
 .skip_sprite_link_loop:
@@ -287,7 +287,7 @@ scr_init_menu:
 	move.l  (a1)+, (a0)
 	dbf     d7, .palette_load_loop
 
-	; Load logo tileset 
+	; Load logo tileset
 	lea     DATA_tileset_logo, a1
 	move.w  #((DATA_tileset_logo_end-DATA_tileset_logo)/4)-1, d7 ; Tileset size
 	move.l  #($40000000)|(($0080<<5)<<16), 4(a0)
@@ -734,7 +734,7 @@ scr_init_play:
 	move.l  (a1)+, (a0)
 	dbf     d7, .palette_load_loop
 
-	; Load background tileset 
+	; Load background tileset
 	lea     DATA_tileset_background, a1
 	move.w  #((DATA_tileset_background_end-DATA_tileset_background)/4)-1, d7 ; Tileset size
 	move.l  #($40000000)|(($0080<<5)<<16), 4(a0)
@@ -742,7 +742,7 @@ scr_init_play:
 	move.l  (a1)+, (a0)
 	dbf     d7, .background_tileset_load_loop
 
-	; Load bus tileset 
+	; Load bus tileset
 	lea     DATA_tileset_bus, a1
 	move.w  #((DATA_tileset_bus_end-DATA_tileset_bus)/4)-1, d7 ; Tileset size
 	move.l  #($40000000)|(($00D0<<5)<<16), 4(a0)
@@ -750,7 +750,7 @@ scr_init_play:
 	move.l  (a1)+, (a0)
 	dbf     d7, .bus_tileset_load_loop
 
-	; Load truck tileset 
+	; Load truck tileset
 	lea     DATA_tileset_truck, a1
 	move.w  #((DATA_tileset_truck_end-DATA_tileset_truck)/4)-1, d7 ; Tileset size
 	move.l  #($40000000)|(($0150<<5)<<16), 4(a0)
@@ -758,7 +758,7 @@ scr_init_play:
 	move.l  (a1)+, (a0)
 	dbf     d7, .truck_tileset_load_loop
 
-	; Load car tileset 
+	; Load car tileset
 	lea     DATA_tileset_car, a1
 	move.w  #((DATA_tileset_car_end-DATA_tileset_car)/4)-1, d7 ; Tileset size
 	move.l  #($40000000)|(($01B0<<5)<<16), 4(a0)

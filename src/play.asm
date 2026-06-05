@@ -958,7 +958,7 @@ handle_solids:
 
 	; If the player character moved to the right, set all bits of the lowest
 	; byte of d3
-	slt.b   d3 
+	slt.b   d3
 
 	; There are two sets of solids: one for the level's fixed solids (stored
 	; in ROM) and another for the pushable crate solids, which move with the
@@ -1080,7 +1080,7 @@ handle_solids:
 
 	; If the player character moved downwards, set all bits of the lowest
 	; byte of d3
-	slt.b   d3 
+	slt.b   d3
 
 	; Keep only the lowest bit of d3; later, bit #1 will be set while
 	; handling pushable crate solids instead of the level's fixed solids
@@ -1836,7 +1836,7 @@ handle_player_interactions:
 	move.l  (FPSVAL_150_PXS).w,  (a0)+ ; xvel
 	move.l  (FPSVAL_M204_PXS).w, (a0)+ ; yvel
 	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
-	clr.w   (a0)+           ; xdest 
+	clr.w   (a0)+           ; xdest
 	move.w  #500, (a0)      ; ydest (below the Y limit, which is 400)
 
 	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w

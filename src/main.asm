@@ -45,7 +45,7 @@ main_loop:
 	bsr     update_screen_wipe
 	bsr     renderer_draw
 
-	bra.s   main_loop 
+	bra.s   main_loop
 
 ; ------------------------------------------------------------------------------
 

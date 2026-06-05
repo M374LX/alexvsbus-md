@@ -29,7 +29,7 @@ DATA_menu_text_about:
 	dc.w    $0202
 	dc.b    $1B, "Alex vs Bus: The Race (MD port)", $0A
 	dc.b    $7F, " 2021-2026 M374LX", $0A ; $7F = copyright symbol
-	dc.b    $0A 
+	dc.b    $0A
 	dc.b    $1B, "Release", $0A
 	dc.b    " pre2", $0A
 	dc.b    $0A
