@@ -27,218 +27,217 @@
 ; ------------------------------------------------------------------------------
 
 ; Sega Genesis screen size
-SCREEN_W:   equ 320
-SCREEN_H:   equ 224
+SCREEN_W:                       equ 320
+SCREEN_H:                       equ 224
 
 ; VDP port addresses
-VDP_CTRL:   equ $C00004
-VDP_DATA:   equ $C00000
+VDP_CTRL:                       equ $C00004
+VDP_DATA:                       equ $C00000
 
 ; Index of the first VDP sprite
-SPR_INITIAL: equ $01F0
+SPR_INITIAL:                    equ $01F0
 
 ; SRAM
-SRAM_LOCK:  equ $A130F1
-SRAM_START: equ $200000
+SRAM_LOCK:                      equ $A130F1
+SRAM_START:                     equ $200000
 
 ; Screen wipe commands
-WIPECMD_NONE:  equ 0
-WIPECMD_IN:    equ 1
-WIPECMD_OUT:   equ 2
-WIPECMD_CLEAR: equ 3
+WIPECMD_NONE:                   equ 0
+WIPECMD_IN:                     equ 1
+WIPECMD_OUT:                    equ 2
+WIPECMD_CLEAR:                  equ 3
 
 ; Sound effects
-SFX_COIN: equ $00
-SFX_CRATE: equ $01
-SFX_FALL: equ $02
-SFX_HIT: equ $03
-SFX_HOLE: equ $04
-SFX_RESPAWN: equ $05
-SFX_SCORE: equ $06
-SFX_SELECT: equ $07
-SFX_SLIP: equ $08
-SFX_SPRING: equ $09
-SFX_TIME: equ $0A
+SFX_COIN:                       equ $00
+SFX_CRATE:                      equ $01
+SFX_FALL:                       equ $02
+SFX_HIT:                        equ $03
+SFX_HOLE:                       equ $04
+SFX_RESPAWN:                    equ $05
+SFX_SCORE:                      equ $06
+SFX_SELECT:                     equ $07
+SFX_SLIP:                       equ $08
+SFX_SPRING:                     equ $09
+SFX_TIME:                       equ $0A
 
 ; Special constant meaning that something does not exist or is unset or inactive
-NONE: equ -1
+NONE:                           equ -1
 
 ; Screen types
-SCR_NONE:          equ 0
-SCR_MENU:          equ 1
-SCR_FINALSCORE:    equ 2
-SCR_PLAY:          equ 3
+SCR_NONE:                       equ 0
+SCR_MENU:                       equ 1
+SCR_FINALSCORE:                 equ 2
+SCR_PLAY:                       equ 3
 
 ; Difficulties
-DIFFICULTY_NORMAL: equ 0
-DIFFICULTY_HARD:   equ 1
-DIFFICULTY_SUPER:  equ 2
-DIFFICULTY_MAX:    equ DIFFICULTY_SUPER
+DIFFICULTY_NORMAL:              equ 0
+DIFFICULTY_HARD:                equ 1
+DIFFICULTY_SUPER:               equ 2
+DIFFICULTY_MAX:                 equ DIFFICULTY_SUPER
 
 ; Delayed action types
-DELACT_NONE:            equ 0
-DELACT_START_PLAY:      equ 1
-DELACT_NEXT_DIFFICULTY: equ 2
-DELACT_TITLE:           equ 3
+DELACT_NONE:                    equ 0
+DELACT_START_PLAY:              equ 1
+DELACT_NEXT_DIFFICULTY:         equ 2
+DELACT_TITLE:                   equ 3
 
 ; Menu types
-MENU_MAIN:         equ 0
-MENU_PAUSE:        equ 1
-MENU_DIFFICULTY:   equ 2
-MENU_LEVEL5:       equ 3
-MENU_LEVEL3:       equ 4
-MENU_JUKEBOX:      equ 5
-MENU_RESTART:      equ 6
-MENU_TRY_AGAIN:    equ 7
-MENU_QUIT:         equ 8
-MENU_ABOUT:        equ 9
-MENU_CREDITS:      equ 10
+MENU_MAIN:                      equ 0
+MENU_PAUSE:                     equ 1
+MENU_DIFFICULTY:                equ 2
+MENU_LEVEL5:                    equ 3
+MENU_LEVEL3:                    equ 4
+MENU_JUKEBOX:                   equ 5
+MENU_RESTART:                   equ 6
+MENU_TRY_AGAIN:                 equ 7
+MENU_QUIT:                      equ 8
+MENU_ABOUT:                     equ 9
+MENU_CREDITS:                   equ 10
 
 ; Menu action types
-MENUACT_NONE:      equ 0
-MENUACT_TITLE:     equ 1
-MENUACT_PLAY:      equ 2
-MENUACT_RESUME:    equ 3
-MENUACT_TRY_AGAIN: equ 4
+MENUACT_NONE:                   equ 0
+MENUACT_TITLE:                  equ 1
+MENUACT_PLAY:                   equ 2
+MENUACT_RESUME:                 equ 3
+MENUACT_TRY_AGAIN:              equ 4
 
 ; Gameplay input actions
-PLAY_INPUT_LEFT:   equ 0
-PLAY_INPUT_RIGHT:  equ 1
-PLAY_INPUT_JUMP:   equ 2
+PLAY_INPUT_LEFT:                equ 0
+PLAY_INPUT_RIGHT:               equ 1
+PLAY_INPUT_JUMP:                equ 2
 
 ; Animations
-ANIM_SIZE_BYTES:       equ 8
-ANIM_PLAYER:           equ (0*ANIM_SIZE_BYTES)
-ANIM_COINS:            equ (1*ANIM_SIZE_BYTES)
-ANIM_GUSHES:           equ (2*ANIM_SIZE_BYTES)
-ANIM_HIT_SPRING:       equ (3*ANIM_SIZE_BYTES)
-ANIM_CRACK_PARTICLES:  equ (4*ANIM_SIZE_BYTES)
-ANIM_BUS_WHEELS:       equ (5*ANIM_SIZE_BYTES)
-ANIM_BUS_DOOR_REAR:    equ (6*ANIM_SIZE_BYTES)
-ANIM_BUS_DOOR_FRONT:   equ (7*ANIM_SIZE_BYTES)
-ANIM_CAR_WHEELS:       equ (8*ANIM_SIZE_BYTES)
-ANIM_HEN:              equ (9*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_1:     equ (10*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_2:     equ (11*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_3:     equ (12*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_4:     equ (13*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_5:     equ (14*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_6:     equ (15*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_7:     equ (16*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_8:     equ (17*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_9:     equ (18*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_10:    equ (19*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_11:    equ (20*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_12:    equ (21*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_13:    equ (22*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_14:    equ (23*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_15:    equ (24*ANIM_SIZE_BYTES)
-ANIM_COIN_SPARK_16:    equ (25*ANIM_SIZE_BYTES)
-ANIM_CUTSCENE_OBJ_1:   equ (26*ANIM_SIZE_BYTES)
-ANIM_CUTSCENE_OBJ_2:   equ (27*ANIM_SIZE_BYTES)
-NUM_ANIMS:             equ 28
+ANIM_SIZE_BYTES:                equ 8
+ANIM_PLAYER:                    equ (0*ANIM_SIZE_BYTES)
+ANIM_COINS:                     equ (1*ANIM_SIZE_BYTES)
+ANIM_GUSHES:                    equ (2*ANIM_SIZE_BYTES)
+ANIM_HIT_SPRING:                equ (3*ANIM_SIZE_BYTES)
+ANIM_CRACK_PARTICLES:           equ (4*ANIM_SIZE_BYTES)
+ANIM_BUS_WHEELS:                equ (5*ANIM_SIZE_BYTES)
+ANIM_BUS_DOOR_REAR:             equ (6*ANIM_SIZE_BYTES)
+ANIM_BUS_DOOR_FRONT:            equ (7*ANIM_SIZE_BYTES)
+ANIM_CAR_WHEELS:                equ (8*ANIM_SIZE_BYTES)
+ANIM_HEN:                       equ (9*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_1:              equ (10*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_2:              equ (11*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_3:              equ (12*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_4:              equ (13*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_5:              equ (14*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_6:              equ (15*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_7:              equ (16*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_8:              equ (17*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_9:              equ (18*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_10:             equ (19*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_11:             equ (20*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_12:             equ (21*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_13:             equ (22*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_14:             equ (23*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_15:             equ (24*ANIM_SIZE_BYTES)
+ANIM_COIN_SPARK_16:             equ (25*ANIM_SIZE_BYTES)
+ANIM_CUTSCENE_OBJ_1:            equ (26*ANIM_SIZE_BYTES)
+ANIM_CUTSCENE_OBJ_2:            equ (27*ANIM_SIZE_BYTES)
+NUM_ANIMS:                      equ 28
 
 ; Player character's states
-PLAYER_STATE_NORMAL: equ 0
-PLAYER_STATE_SLIP: equ 1
-PLAYER_STATE_GETUP: equ 2
-PLAYER_STATE_THROWBACK: equ 3
-PLAYER_STATE_GRABROPE: equ 4
-PLAYER_STATE_FLICKER: equ 5
-PLAYER_STATE_INACTIVE: equ 6
+PLAYER_STATE_NORMAL:            equ 0
+PLAYER_STATE_SLIP:              equ 1
+PLAYER_STATE_GETUP:             equ 2
+PLAYER_STATE_THROWBACK:         equ 3
+PLAYER_STATE_GRABROPE:          equ 4
+PLAYER_STATE_FLICKER:           equ 5
+PLAYER_STATE_INACTIVE:          equ 6
 
 ; Player character's animation types
-PLAYER_ANIM_STAND:     equ 0
-PLAYER_ANIM_WALK:      equ 1
-PLAYER_ANIM_WALKBACK:  equ 2
-PLAYER_ANIM_JUMP:      equ 3
-PLAYER_ANIM_SLIP:      equ 4
-PLAYER_ANIM_SLIPREV:   equ 5 ; Reverse slip
-PLAYER_ANIM_THROWBACK: equ 6
-PLAYER_ANIM_GRABROPE:  equ 7
+PLAYER_ANIM_STAND:              equ 0
+PLAYER_ANIM_WALK:               equ 1
+PLAYER_ANIM_WALKBACK:           equ 2
+PLAYER_ANIM_JUMP:               equ 3
+PLAYER_ANIM_SLIP:               equ 4
+PLAYER_ANIM_SLIPREV:            equ 5 ; Reverse slip
+PLAYER_ANIM_THROWBACK:          equ 6
+PLAYER_ANIM_GRABROPE:           equ 7
 
 ; Player character's bounding box and height
-PLAYER_BOX_OFFSET_X: equ 8
-PLAYER_BOX_WIDTH: equ 12
-PLAYER_HEIGHT_NORMAL: equ 60
-PLAYER_HEIGHT_SLIP: equ 38
+PLAYER_BOX_OFFSET_X:            equ 8
+PLAYER_BOX_WIDTH:               equ 12
+PLAYER_HEIGHT_NORMAL:           equ 60
+PLAYER_HEIGHT_SLIP:             equ 38
 
 ; Solid types
-SOL_FULL: equ 0
-SOL_VERTICAL: equ 1
-SOL_SLOPE_UP: equ 2
-SOL_SLOPE_DOWN: equ 3
-SOL_KEEP_ON_TOP: equ 4
-SOL_PASSAGEWAY_ENTRY: equ 5
-SOL_PASSAGEWAY_EXIT: equ 6
+SOL_FULL:                       equ 0
+SOL_VERTICAL:                   equ 1
+SOL_SLOPE_UP:                   equ 2
+SOL_SLOPE_DOWN:                 equ 3
+SOL_KEEP_ON_TOP:                equ 4
+SOL_PASSAGEWAY_ENTRY:           equ 5
+SOL_PASSAGEWAY_EXIT:            equ 6
 
-FLOOR_Y: equ 264
+FLOOR_Y:                        equ 264
 
 ; Object types
-OBJ_NULL: equ 0
-OBJ_BANANA_PEEL: equ 1
-OBJ_GUSH: equ 2
-OBJ_GUSH_CRACK: equ 3
-OBJ_PUSH_CRATE: equ 4
-OBJ_PUSH_CRATE_WITH_ARROW: equ 5
-OBJ_ROPE: equ 6
-OBJ_SPRING: equ 7
+OBJ_NULL:                       equ 0
+OBJ_BANANA_PEEL:                equ 1
+OBJ_GUSH:                       equ 2
+OBJ_GUSH_CRACK:                 equ 3
+OBJ_PUSH_CRATE:                 equ 4
+OBJ_PUSH_CRATE_WITH_ARROW:      equ 5
+OBJ_ROPE:                       equ 6
+OBJ_SPRING:                     equ 7
 
 ; Vehicle types
-VEH_NONE: equ 0
-VEH_PARKED_CAR_BLUE: equ 1
-VEH_PARKED_CAR_SILVER: equ 2
-VEH_PARKED_CAR_YELLOW: equ 3
-VEH_PARKED_TRUCK: equ 4
-VEH_BUS: equ 5
-VEH_ENDING_CAR_BLUE: equ 6
-VEH_ENDING_CAR_SILVER: equ 7
-VEH_ENDING_CAR_YELLOW: equ 8
+VEH_NONE:                       equ 0
+VEH_PARKED_CAR_BLUE:            equ 1
+VEH_PARKED_CAR_SILVER:          equ 2
+VEH_PARKED_CAR_YELLOW:          equ 3
+VEH_PARKED_TRUCK:               equ 4
+VEH_BUS:                        equ 5
+VEH_ENDING_CAR_BLUE:            equ 6
+VEH_ENDING_CAR_SILVER:          equ 7
+VEH_ENDING_CAR_YELLOW:          equ 8
 
 ; Maximum numbers
-MAX_OBJS: equ 160
-MAX_PASSAGEWAYS: equ 4
-MAX_CRACK_PARTICLES: equ 16
-MAX_COIN_SPARKS: equ 16
-MAX_GUSHES: equ 32
-MAX_MOVING_PEELS: equ 2
-MAX_PUSHABLE_CRATES: equ 4
+MAX_PASSAGEWAYS:                equ 4
+MAX_CRACK_PARTICLES:            equ 16
+MAX_COIN_SPARKS:                equ 16
+MAX_GUSHES:                     equ 32
+MAX_MOVING_PEELS:               equ 2
+MAX_PUSHABLE_CRATES:            equ 4
 
 ; Objects with a fixed Y position
-BUS_Y: equ 128
-BUS_STOP_SIGN_Y: equ 176
-POLE_Y: equ 120
-HYDRANT_Y: equ 240
-ROPE_Y: equ 144
-PASSING_CAR_Y: equ 184
-HEN_Y: equ 224
+BUS_Y:                          equ 128
+BUS_STOP_SIGN_Y:                equ 176
+POLE_Y:                         equ 120
+HYDRANT_Y:                      equ 240
+ROPE_Y:                         equ 144
+PASSING_CAR_Y:                  equ 184
+HEN_Y:                          equ 224
 
 ; Cutscene object types
-COBJ_NONE: equ 0
-COBJ_PLAYER_STAND: equ 1
-COBJ_PLAYER_WALK: equ 2
-COBJ_PLAYER_RUN: equ 3
-COBJ_PLAYER_CLEAN_DUNG: equ 4
-COBJ_BEARDED_MAN_STAND: equ 5
-COBJ_BEARDED_MAN_WALK: equ 6
-COBJ_BEARDED_MAN_JUMP: equ 7
-COBJ_BIRD: equ 8
-COBJ_DUNG: equ 9
-COBJ_FLAGMAN: equ 10
+COBJ_NONE:                      equ 0
+COBJ_PLAYER_STAND:              equ 1
+COBJ_PLAYER_WALK:               equ 2
+COBJ_PLAYER_RUN:                equ 3
+COBJ_PLAYER_CLEAN_DUNG:         equ 4
+COBJ_BEARDED_MAN_STAND:         equ 5
+COBJ_BEARDED_MAN_WALK:          equ 6
+COBJ_BEARDED_MAN_JUMP:          equ 7
+COBJ_BIRD:                      equ 8
+COBJ_DUNG:                      equ 9
+COBJ_FLAGMAN:                   equ 10
 
 ; Sequence types
-SEQ_NORMAL_PLAY_START: equ 0
-SEQ_NORMAL_PLAY: equ 1
-SEQ_INITIAL: equ 10
-SEQ_BUS_LEAVING: equ 20
-SEQ_TIMEUP_BUS_NEAR: equ 30
-SEQ_TIMEUP_BUS_FAR: equ 40
-SEQ_GOAL_REACHED: equ 50
-SEQ_GOAL_REACHED_SCENE1: equ 60
-SEQ_GOAL_REACHED_SCENE2: equ 70
-SEQ_GOAL_REACHED_SCENE3: equ 80
-SEQ_GOAL_REACHED_SCENE4: equ 90
-SEQ_GOAL_REACHED_SCENE5: equ 100
-SEQ_ENDING: equ 110
-SEQ_FINISHED: equ 255
+SEQ_NORMAL_PLAY_START:          equ 0
+SEQ_NORMAL_PLAY:                equ 1
+SEQ_INITIAL:                    equ 10
+SEQ_BUS_LEAVING:                equ 20
+SEQ_TIMEUP_BUS_NEAR:            equ 30
+SEQ_TIMEUP_BUS_FAR:             equ 40
+SEQ_GOAL_REACHED:               equ 50
+SEQ_GOAL_REACHED_SCENE1:        equ 60
+SEQ_GOAL_REACHED_SCENE2:        equ 70
+SEQ_GOAL_REACHED_SCENE3:        equ 80
+SEQ_GOAL_REACHED_SCENE4:        equ 90
+SEQ_GOAL_REACHED_SCENE5:        equ 100
+SEQ_ENDING:                     equ 110
+SEQ_FINISHED:                   equ 255
 
