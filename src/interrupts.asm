@@ -49,16 +49,25 @@ int_hblank:
 
 	move.b   (RAM_wipe_value).w, d1
 	beq.s   .ret
-
 	cmpi.b  #(SCREEN_H/(8*2)), d1
 	bhs.s   .ret
 
-	lsr.b   #3, d0
+	add.b   d1, d1
+	add.b   d1, d1
+	add.b   d1, d1
+	subq.b  #1, d1
+
 	cmp.b   d0, d1
 	beq.s   .wipe_top
 
 	move.b  #(SCREEN_H/8), d1
 	sub.b   (RAM_wipe_value).w, d1
+
+	add.b   d1, d1
+	add.b   d1, d1
+	add.b   d1, d1
+	subq.b  #1, d1
+
 	cmp.b   d0, d1
 	beq.s   .wipe_bottom
 	bra.s   .ret

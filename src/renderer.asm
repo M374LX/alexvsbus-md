@@ -201,7 +201,7 @@ renderer_handle_wipe:
 	bra.s   .wipe_cmd_done
 
 .wipe_cmd_out:
-	clr.b   (RAM_wipe_value).w
+	move.b  #1, (RAM_wipe_value).w
 	move.b  #1, (RAM_wipe_delta).w
 	move.b  #1, (RAM_wipe_delay).w
 	bra.s   .wipe_cmd_done
