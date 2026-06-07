@@ -58,8 +58,8 @@ play_clear:
 	move.b  d0, (RAM_cur_passageway).w
 
 	; Clear moving banana peels
-	move.b  d0, (RAM_moving_peels+(32*0+24)).w
-	move.b  d0, (RAM_moving_peels+(32*1+24)).w
+	move.l  d0, (RAM_moving_peels+(32*0)).w
+	move.l  d0, (RAM_moving_peels+(32*1)).w
 
 	; Make passing car and hen inactive
 	move.l  d0, (RAM_passing_car_x).w
@@ -469,20 +469,9 @@ move_objects:
 	moveq   #MAX_MOVING_PEELS-1, d7
 	lea     (RAM_moving_peels).w, a0
 .moving_peels_loop:
-	; Move index of peel object within RAM_objs to d0
-	moveq   #0, d0
-	move.b  24(a0), d0
-
-	; If there is no object, skip
-	cmpi.b  #NONE, d0
-	beq     .next_peel
-
-	; Point a1 to the object within RAM_objs
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a1
-	adda.w  d0, a1
+	; If there is no moving peel, skip
+	tst.l   (a0)
+	ble.s   .next_peel
 
 	; Apply gravity
 	move.l  16(a0), d0
@@ -494,32 +483,37 @@ move_objects:
 	move.l  12(a0), d0
 	add.l   d0, 4(a0)
 
-	; Check if the peel had reached the limit Y position or ydest
+	; Check if the peel had reached the limit Y position (400) or ydest
 	move.w  4(a0), d0
 	cmpi.w  #400, d0
-	bgt     .deactivate_peel
+	bgt.s   .deactivate_peel
 	cmp.w   22(a0), d0
-	bge     .apply_peel_ydest
-	bra     .skip_peel_ydest
+	bge.s   .apply_peel_ydest
+	bra.s   .next_peel
 
 .deactivate_peel:
-	clr.w   (a1) ; Set object type to zero (OBJ_NULL)
-	move.b  #NONE, 24(a0)
-	bra     .skip_peel_ydest
+	clr.l   (a0)
+	bra.s   .next_peel
 
 .apply_peel_ydest:
-	; Stop the peel if it reaches ydest
-	move.w  #OBJ_BANANA_PEEL, (a1)
-	move.l  20(a0), (a0)  ; x = xdest
-	clr.w   2(a0)
-	move.l  22(a0), 4(a0) ; y = ydest
-	clr.w   6(a0)
-	move.b  #NONE, 24(a0)
-.skip_peel_ydest:
+	; Stop the moving peel
+	clr.l   (a0)
 
-	; Update position of object within RAM_objs
-	move.w  (a0), 2(a1)
-	move.w  4(a0), 4(a1)
+	; Find the next available entry within RAM_objs
+	moveq   #0, d0
+	move.b  (RAM_num_objs).w, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	lea     (RAM_objs).w, a1
+	adda.w  d0, a1
+
+	addq.b  #1, (RAM_num_objs).w
+
+	; Add a peel to RAM_objs
+	move.w  #OBJ_BANANA_PEEL, (a1)+
+	move.w  20(a0), (a1)+ ; x = xdest
+	move.w  22(a0), (a1)+ ; y = ydest
 
 .next_peel:
 	lea     32(a0), a0
@@ -759,7 +753,7 @@ move_objects:
 	; Check if the crack particle has reached the limit Y position (400) and
 	; deactivate it if so
 	cmpi.w  #400, 4(a0)
-	blt     .next_crack_particle
+	blt.s   .next_crack_particle
 	move.l  #NONE, (a0)
 
 .next_crack_particle:
@@ -806,15 +800,7 @@ handle_car_thrown_peel:
 	cmp.w   (RAM_passing_car_peel_throw_x).w, d0
 	blt.s   .dont_throw_peel
 
-	moveq   #0, d0
-	move.b  (RAM_num_objs).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a0
-	adda.w  d0, a0
-
-	clr.w   (a0) ; Clear object type
+	move.b  #1, (RAM_passing_car_threw_peel).w
 
 	; Second moving peel
 	lea     (RAM_moving_peels+32).w, a0
@@ -836,10 +822,6 @@ handle_car_thrown_peel:
 	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
 	move.w  d1, (a0)+      ; xdest
 	move.w  #256, (a0)+    ; ydest
-	move.b  (RAM_num_objs).w, (a0) ; obj
-
-	move.b  #1, (RAM_passing_car_threw_peel).w
-	addq.b  #1, (RAM_num_objs).w
 
 .dont_throw_peel:
 	rts
@@ -1477,7 +1459,6 @@ handle_passageways:
 handle_player_interactions:
 	cmpi.b  #PLAYER_STATE_INACTIVE, (RAM_player_state).w
 	bne.s   .player_not_inactive
-
 	rts
 .player_not_inactive:
 
@@ -1686,17 +1667,16 @@ handle_player_interactions:
 	; Set d5 flag
 	bset.l  #1, d5
 
-	clr.w   (a2) ; Clear object type
 	lea     (RAM_moving_peels).w, a0
-
-	; Set the index within RAM_moving_peels
-	move.b  d6, 24(a0)
 
 	; Position moving peel
 	move.w  2(a2), (a0)+ ; x
 	clr.w   (a0)+
 	move.w  4(a2), (a0)+ ; y
 	clr.w   (a0)+
+
+	; Clear object type
+	clr.w   (a2)
 
 	bra     .next_obj
 
@@ -1941,7 +1921,7 @@ handle_triggers:
 	move.w  d1, (RAM_passing_car_peel_throw_x).w
 	
 	move.b  3(a0), (RAM_passing_car_color).w
-	move.b  #0, (RAM_passing_car_threw_peel).w
+	clr.b   (RAM_passing_car_threw_peel).w
 	bset.b  #0, (RAM_anims+ANIM_CAR_WHEELS+4).w ; Set car wheel animation "running" flag
 
 	bra.s   .next_trigger
@@ -2873,18 +2853,16 @@ update_sequence:
 
 	; A banana peel is thrown from the right side of the screen
 	lea     (RAM_moving_peels+32).w, a0
-	move.w  (RAM_level_size_pixels).w, (a0)+
+	move.w  (RAM_level_size_pixels).w, (a0)+ ; x
 	clr.w   (a0)+
-	move.w  #(BUS_Y+72), (a0)+
+	move.w  #(BUS_Y+72), (a0)+ ; y
 	clr.w   (a0)+
-	move.l  (FPSVAL_M510_PXS).w, (a0)+
-	move.l  (FPSVAL_204_PXS).w,  (a0)+
-	move.l  (FPSVAL_504_PXSS).w, (a0)+
-	move.w  (RAM_bus_x).w, (a0)
+	move.l  (FPSVAL_M510_PXS).w, (a0)+ ; xvel
+	move.l  (FPSVAL_204_PXS).w,  (a0)+ ; yvel
+	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
+	move.w  (RAM_bus_x).w, (a0) ; xdest
 	addi.w  #345, (a0)+
-	move.w  #256, (a0)+
-	clr.b   (a0)
-	move.w  #OBJ_BANANA_PEEL, (RAM_objs).w
+	move.w  #256, (a0)+ ; ydest
 
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
 	rts

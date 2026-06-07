@@ -272,7 +272,6 @@ RAM_objs:                       equ $FFFF9400
 ; grav (L)
 ; xdest (W)
 ; ydest (W)
-; obj (B)
 RAM_moving_peels:               equ $FFFF9800
 
 ; 16 coin sparks, 4 bytes each (64 bytes in total), with the following
