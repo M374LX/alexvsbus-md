@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	int sprite_num = 0;
 
 	if (argc < 2) {
-		printf("Usage: %s <file>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <file>\n", argv[0]);
 
 		return 0;
 	}
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	fp = fopen(argv[1], "r");
 
 	if (fp == NULL) {
-		printf("Cannot open file.\n");
+		perror(argv[1]);
 
 		return 1;
 	}

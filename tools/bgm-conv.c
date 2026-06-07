@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
 	FILE* f;
 
 	if (argc != 3) {
-		printf("Usage: %s <in-file> <out-file>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <in-file> <out-file>\n", argv[0]);
 
 		return 1;
 	}

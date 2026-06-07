@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	int i;
 
 	if (argc != 2) {
-		printf("Usage: %s <ROM>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <ROM>\n", argv[0]);
 
 		return 1;
 	}
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 	fp = fopen(argv[1], "r");
 
 	if (fp == NULL) {
-		printf("Could not open file for reading\n");
+		perror(argv[1]);
 
 		return 1;
 	}
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 	//Check if the ROM has the correct size
 	if (ftell(fp) != ROM_SIZE) {
 		fclose(fp);
-		printf("Incorrect ROM size (it must be 512 kB)\n");
+		fprintf(stderr, "Incorrect ROM size (it must be 512 kB)\n");
 
 		return 1;
 	}
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 	//Check if it is a valid Sega Genesis/Mega Drive ROM
 	if (strncmp(&rom[0x100], "SEGA GENESIS    ", 16) != 0) {
 		if (strncmp(&rom[0x100], "SEGA MEGA DRIVE ", 16) != 0) {
-			printf("Not a valid Sega Genesis/Mega Drive ROM\n");
+			fprintf(stderr, "Not a valid Sega Genesis/Mega Drive ROM\n");
 
 			return 1;
 		}
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 
 	//Check if the ROM end address declared in the header is correct
 	if (read32(&rom[0x1A4]) != 0x7FFFF) {
-		printf(
+		fprintf(stderr,
 			"The ROM end address declared in the header is incorrect "
 			"(it must be $0007FFFF)\n"
 		);
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 	fp = fopen(argv[1], "w");
 
 	if (fp == NULL) {
-		printf("Could not open file for writing\n");
+		perror(argv[1]);
 
 		return 1;
 	}

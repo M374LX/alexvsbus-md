@@ -408,12 +408,6 @@ static void add_solids()
 {
 	int i;
 
-	/*
-	if (invalid) {
-		return;
-	}
-	*/
-
 	//Add first floor solid
 	add_solid(SOL_FULL, 0, 264, LEVEL_BLOCK_SIZE, 80);
 
@@ -444,13 +438,6 @@ static void add_solids()
 				add_solid(SOL_FULL, x, 264, 0, 80);
 				break;
 		}
-
-		//Too many solids
-		/*
-		if (invalid) {
-			return;
-		}
-		*/
 	}
 
 	//Add passageway solids
@@ -492,13 +479,6 @@ static void add_solids()
 			int h = num_crates * LEVEL_BLOCK_SIZE;
 
 			add_solid(SOL_FULL, x, y, w, h);
-
-			//Too many solids
-			/*
-			if (invalid) {
-				return;
-			}
-			*/
 		}
 	}
 
@@ -548,17 +528,12 @@ static void add_solids()
 	}
 }
 
-static bool read_file(const char* filename)
+static bool read_file(FILE* fp)
 {
-	FILE* fp = fopen(filename, "r");
 	char buffer[64];
 	int tokens[3];
 	int x_next = 20;
 	int i;
-
-	if (fp == NULL) {
-		return false;
-	}
 
 	sky_color = -1;
 	bgm = -1;
@@ -681,6 +656,8 @@ static bool read_file(const char* filename)
 			add_passageway(x_next, tokens[1]);
 			add_obj(OBJ_PUSH_CRATE_WITH_ARROW, x_next, 0);
 			add_obj(OBJ_SPRING, x_next + tokens[1] - 1, 14);
+		} else {
+			return false;
 		}
 	}
 
@@ -689,8 +666,6 @@ static bool read_file(const char* filename)
 
 	//Add a dummy trigger to the end of the list
 	num_triggers++;
-
-	fclose(fp);
 
 	return true;
 }
@@ -794,11 +769,12 @@ void output_stats()
 
 void print_usage(char* argv[])
 {
-	printf("Usage: %s [-s] <in-file> [out-file]\n", argv[0]);
+	fprintf(stderr, "Usage: %s [-s] <in-file> [out-file]\n", argv[0]);
 }
 
 int main(int argc, char* argv[])
 {
+	FILE* fp;
 	char* filename;
 	bool output_mode_stats = false;
 	int len;
@@ -828,30 +804,39 @@ int main(int argc, char* argv[])
 	difficulty = filename[len - 1];
 
 	if (level_num < 1 || level_num > 5) {
-		printf("Invalid level number\n");
+		fprintf(stderr, "Invalid level number\n");
 
 		return 1;
 	}
 
-	if (difficulty != 'n' && difficulty != 'h' && difficulty != 's'
-			&& difficulty != 't') {
-
-		printf("Invalid difficulty\n");
+	if (difficulty != 'n' && difficulty != 'h' && difficulty != 's') {
+		fprintf(stderr, "Invalid difficulty\n");
 
 		return 1;
 	}
 
-	if (!read_file(filename)) {
-		printf("Read error\n");
+	fp = fopen(filename, "r");
+
+	if (fp == NULL) {
+		perror(filename);
 
 		return 1;
 	}
+
+	if (!read_file(fp)) {
+		fprintf(stderr, "Invalid file\n");
+
+		return 1;
+	}
+
+	fclose(fp);
 
 	if (!output_mode_stats) {
-		FILE* fp = fopen(argv[2], "wb");
+		filename = argv[2];
+		fp = fopen(filename, "wb");
 
 		if (fp == NULL) {
-			printf("Cannot open output file\n");
+			perror(filename);
 
 			return 1;
 		}
