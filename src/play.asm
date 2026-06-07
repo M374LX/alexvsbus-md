@@ -28,12 +28,12 @@
 
 play_clear:
 	moveq   #0, d0
-	moveq   #0, d1
+	moveq   #0, d7
 	lea     (RAM_play_clear_start).w, a0
-	move.w  #((RAM_play_clear_end-RAM_play_clear_start)/4)-1, d1
+	move.w  #((RAM_play_clear_end-RAM_play_clear_start)/4)-1, d7
 .play_clear_loop:
 	move.l  d0, (a0)+
-	dbf     d1, .play_clear_loop
+	dbf     d7, .play_clear_loop
 
 	bset.b  #0, (RAM_play_flags).w ; Set "ignore user input" flag
 
@@ -67,19 +67,20 @@ play_clear:
 
 	; Clear gushes
 	clr.b   (RAM_num_gushes).w
-	lea     (RAM_gushes+12).w, a0
 	moveq   #MAX_GUSHES-1, d7
+	lea     (RAM_gushes+12).w, a0
 .gushes_clear_loop:
 	move.b  d0, (a0)
 	lea     16(a0), a0
 	dbf     d7, .gushes_clear_loop
 
 	; Clear pushable crates
+	moveq   #MAX_PUSHABLE_CRATES-1, d7
 	lea     (RAM_pushable_crates+7).w, a0
-	rept    MAX_PUSHABLE_CRATES
+.pushable_crates_clear_loop:
 	move.b  d0, (a0)
-	addq    #8, a0
-	endr
+	addq.w  #8, a0
+	dbf     d7, .pushable_crates_clear_loop
 
 	; Initialize animations
 	moveq   #0, d0
