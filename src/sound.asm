@@ -222,6 +222,7 @@ sound_stop:
 	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
 	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
 	clr.w   SOUNDRAM_locked_channels
+	clr.b   SOUNDRAM_vibrato_enable
 	bra.s   sound_silence_all_channels
 
 ; ------------------------------------------------------------------------------
