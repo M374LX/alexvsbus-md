@@ -409,7 +409,7 @@ update_remaining_time:
 	bhi.s   .ret
 
 	move.w  #SFX_TIME, d0
-	bsr     sound_play_sfx
+	bra     sound_play_sfx
 
 .ret:
 	rts
@@ -2186,7 +2186,7 @@ handle_respawn:
 .no_camera_retreat:
 
 	move.w  #SFX_RESPAWN, d0
-	bsr     sound_play_sfx
+	bra     sound_play_sfx
 
 .ret:
 	rts
