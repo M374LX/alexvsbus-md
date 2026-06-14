@@ -26,16 +26,16 @@
 
 ; ------------------------------------------------------------------------------
 
-SOUNDRAM_size: equ $80
+SOUNDRAM_size:                  equ $80
 
 ; Flags:
 ; 0 - BGM paused
 ; 1 - Handling the SFX (not BGM) stream
 ; 2 - PAL system
-SOUNDRAM_flags: equ RAM_sound+$00
+SOUNDRAM_flags:                 equ RAM_sound+$00
 
 ; One bit for each channel
-SOUNDRAM_locked_channels: equ RAM_sound+$02
+SOUNDRAM_locked_channels:       equ RAM_sound+$02
 
 ; Stream properties:
 ; +$00 (W) - Position
@@ -43,11 +43,11 @@ SOUNDRAM_locked_channels: equ RAM_sound+$02
 ; +$04 (B) - Playing (boolean)
 ; +$06 (W) - Loop start position
 ; +$08 (L) - Start location
-SOUNDRAM_stream_bgm: equ RAM_sound+$10
-SOUNDRAM_stream_sfx: equ RAM_sound+$20
+SOUNDRAM_stream_bgm:            equ RAM_sound+$10
+SOUNDRAM_stream_sfx:            equ RAM_sound+$20
 
 ; Each byte keeps track of each channel's current instrument for music
-SOUNDRAM_instrs: equ RAM_sound+$30
+SOUNDRAM_instrs:                equ RAM_sound+$30
 
 ; Memory area reserved for the states of the PSG envelopes
 ;
@@ -75,28 +75,28 @@ SOUNDRAM_instrs: equ RAM_sound+$30
 ; For the frequency or noise type of each channel, $0000 means no change and
 ; $FFFF means note off
 ;
-SOUNDRAM_psg_instrs: equ RAM_sound+$40
+SOUNDRAM_psg_instrs:            equ RAM_sound+$40
 
 ; Two words (four bytes) for each of the PSG tone channels
 ;
 ; For each channel, the first word is the base frequency and the second word is
 ; the vibrato position
-SOUNDRAM_vibrato: equ RAM_sound+$60
+SOUNDRAM_vibrato:               equ RAM_sound+$60
 
 ; One bit for each PSG tone channel determining whether vibrato is enabled
-SOUNDRAM_vibrato_enable:  equ RAM_sound+$70
+SOUNDRAM_vibrato_enable:        equ RAM_sound+$70
 
 ; ------------------------------------------------------------------------------
 
-PSG_DATA: equ $C00011
-FM_DATA:  equ $A04000
+PSG_DATA:                       equ $C00011
+FM_DATA:                        equ $A04000
 
 ; Location of the "status" variable in Z80 RAM
-Z80_STATUS_ADDR: equ $A01FF0
+Z80_STATUS_ADDR:                equ $A01FF0
 
 ; Z80 sample driver commands
-Z80_CMD_PLAY: equ 1
-Z80_CMD_STOP: equ 2
+Z80_CMD_PLAY:                   equ 1
+Z80_CMD_STOP:                   equ 2
 
 ; ------------------------------------------------------------------------------
 
@@ -211,22 +211,6 @@ sound_resume_bgm:
 
 ; ------------------------------------------------------------------------------
 
-sound_pause:
-	bset.b  #0, SOUNDRAM_flags ; Set "paused" flag
-
-	; Fallthrough
-
-; ------------------------------------------------------------------------------
-
-sound_stop:
-	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
-	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
-	clr.w   SOUNDRAM_locked_channels
-	clr.b   SOUNDRAM_vibrato_enable
-	bra.s   sound_silence_all_channels
-
-; ------------------------------------------------------------------------------
-
 ; d0 = SFX number
 ; Breaks: d0, d7, a0, a1, a2
 sound_play_sfx:
@@ -246,6 +230,23 @@ sound_play_sfx:
 	move.l  a2, (a1) ; Start location
 
 	rts
+
+; ------------------------------------------------------------------------------
+
+sound_pause:
+	bset.b  #0, SOUNDRAM_flags ; Set "paused" flag
+
+	; Fallthrough
+
+; ------------------------------------------------------------------------------
+
+sound_stop:
+	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
+	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
+	clr.w   SOUNDRAM_locked_channels
+	clr.b   SOUNDRAM_vibrato_enable
+
+	; Fallthrough
 
 ; ------------------------------------------------------------------------------
 
