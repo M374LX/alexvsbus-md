@@ -1402,7 +1402,8 @@ handle_passageways:
 	movea.l (RAM_ptr_passageways).w, a0
 	adda.w  d0, a0
 
-	move.w  2(a0), d3 ; Store passageway right side in d3
+	; Store passageway right side in d3
+	move.w  2(a0), d3
 	subi.w  #32, d3
 
 	move.w  (RAM_player_x).w, d0
@@ -1424,8 +1425,10 @@ handle_passageways:
 	cmpi.w  #(FLOOR_Y+8), (RAM_player_y).w
 	bge.s   .not_opening_exit
 
-	move.w  #SFX_HOLE, d0
-	bsr     sound_play_sfx
+	; Mark passageway exit as opened
+	moveq   #0, d0
+	move.b  (RAM_cur_passageway).w, d0
+	bset.b  d0, (RAM_passageway_opened_exits).w
 
 	; Add crack particles
 	move.w  d3, d0
@@ -1433,10 +1436,8 @@ handle_passageways:
 	move.w  #276, d1
 	bsr     add_crack_particles
 
-	; Mark passageway exit as opened
-	moveq   #0, d0
-	move.b  (RAM_cur_passageway).w, d0
-	bset.b  d0, (RAM_passageway_opened_exits).w
+	move.w  #SFX_HOLE, d0
+	bsr     sound_play_sfx
 .not_opening_exit:
 
 	move.w  (RAM_player_y).w, d0
@@ -1854,6 +1855,9 @@ handle_player_interactions:
 	move.w  (RAM_player_y).w, d3
 	addi.w  #48, d3
 
+	; Use d4 to determine whether a crate has been pushed
+	moveq   #0, d4
+
 	moveq   #MAX_PUSHABLE_CRATES-1, d7
 	lea     (RAM_pushable_crates).w, a0
 	lea     (RAM_pushable_crate_solids).w, a1
@@ -1880,15 +1884,20 @@ handle_player_interactions:
 	; Finished pushing the crate
 	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
 	move.b  #6, 6(a0) ; Set crate's "pushed" and "moving" flags
-
-	move.w  #SFX_CRATE, d0
-	bsr     sound_play_sfx
+	st.b    d4
 
 .next_pushable_crate:
 	addq.w  #8, a0
 	lea     10(a1), a1
 	dbf     d7, .pushable_crates_loop
 
+	; If a crate has been pushed, play a sound effect
+	tst.b   d4
+	beq.s   .ret
+	move.w  #SFX_CRATE, d0
+	bra     sound_play_sfx
+
+.ret:
 	rts
 
 ; ------------------------------------------------------------------------------

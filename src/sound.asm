@@ -109,12 +109,12 @@ sound_init:
 	move.b  #$FF, (a0)
 
 	; Clear sound RAM
-	moveq   #0, d0
+	moveq   #0, d1
 	lea     RAM_sound, a0
-	moveq   #(SOUNDRAM_size/4)-1, d7
+	moveq   #(SOUNDRAM_size/4)-1, d0
 .soundram_clear_loop:
-	move.l  d0, (a0)+
-	dbf     d7, .soundram_clear_loop
+	move.l  d1, (a0)+
+	dbf     d0, .soundram_clear_loop
 
 	; Halt and reset the Z80
 	move.w  #$100, Z80_BUSREQ
@@ -123,10 +123,10 @@ sound_init:
 	; Load the Z80 driver
 	lea     z80_driver, a0
 	lea     $A00000, a1
-	move.l  #(z80_driver_end-z80_driver-1), d7
+	move.l  #(z80_driver_end-z80_driver-1), d0
 .z80_driver_load_loop:
 	move.b  (a0)+, (a1)+
-	dbf     d7, .z80_driver_load_loop
+	dbf     d0, .z80_driver_load_loop
 
 	; Determine if the system is PAL
 	move.b  $A10001, d0
@@ -175,7 +175,7 @@ sound_init:
 ; ------------------------------------------------------------------------------
 
 ; d0 = BGM number
-; Breaks: d0, a0, a1
+; Breaks: d0, a0
 sound_play_bgm:
 	bclr.b  #0, SOUNDRAM_flags ; Clear "paused" flag
 
@@ -186,14 +186,14 @@ sound_play_bgm:
 	add.w   d0, d0
 	lea     DATA_bgm_list, a0
 	adda.w  d0, a0
-	movea.l (a0), a0
+	move.l  (a0), d0
 
-	lea     SOUNDRAM_stream_bgm, a1
-	clr.l   (a1)+    ; Position and ticks
-	st.b    (a1)+    ; Playing
-	clr.b   (a1)+    ; Unused
-	clr.w   (a1)+    ; Loop start
-	move.l  a0, (a1) ; Start location
+	lea     SOUNDRAM_stream_bgm, a0
+	clr.l   (a0)+    ; Position and ticks
+	st.b    (a0)+    ; Playing
+	clr.b   (a0)+    ; Unused
+	clr.w   (a0)+    ; Loop start
+	move.l  d0, (a0) ; Start location
 
 	bra.s   sound_silence_all_channels
 
@@ -212,7 +212,7 @@ sound_resume_bgm:
 ; ------------------------------------------------------------------------------
 
 ; d0 = SFX number
-; Breaks: d0, d7, a0, a1, a2
+; Breaks: d0-d3, a0-a2
 sound_play_sfx:
 	; Find stream start location and store it in a2
 	add.w   d0, d0
@@ -439,7 +439,7 @@ sound_handle_events:
 	andi.w  #$1F, d1
 	subq.w  #1, d1
 
-	; Move note base frequency to d3
+	; Move note base frequency to d4
 	lea     note_freqs_fm(pc), a0
 	move.w  (a0, d1.w), d4
 
@@ -846,69 +846,70 @@ sound_handle_events:
 
 ; ------------------------------------------------------------------------------
 
+; Breaks: d0-d3, a0-a1
 sound_stop_sfx:
-	move.b  SOUNDRAM_locked_channels+1, d7
+	move.b  SOUNDRAM_locked_channels+1, d3
 
 	; Restore instruments
 
 	moveq   #0, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .fm_chan2
 	bsr     restore_fm_instr
 
 .fm_chan2:
 	moveq   #1, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .fm_chan3
 	bsr     restore_fm_instr
 
 .fm_chan3:
 	moveq   #2, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .fm_chan4
 	bsr     restore_fm_instr
 
 .fm_chan4:
 	moveq   #4, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .fm_chan5
 	bsr     restore_fm_instr
 
 .fm_chan5:
 	moveq   #5, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .fm_chan6
 	bsr     restore_fm_instr
 
 .fm_chan6:
 	moveq   #6, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .psg
 	bsr     restore_fm_instr
 
 .psg:
-	move.b  SOUNDRAM_locked_channels, d7
+	move.b  SOUNDRAM_locked_channels, d3
 
 	moveq   #0, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .psg_chan2
 	bsr.s   restore_psg_instr
 
 .psg_chan2:
 	moveq   #1, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .psg_chan3
 	bsr.s   restore_psg_instr
 
 .psg_chan3:
 	moveq   #2, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .psg_chan4
 	bsr.s   restore_psg_instr
 
 .psg_chan4:
 	moveq   #3, d0
-	btst.l  d0, d7
+	btst.l  d0, d3
 	beq.s   .ret
 	bsr.s   restore_psg_instr
 
@@ -971,6 +972,7 @@ psg_load_instr:
 ; ------------------------------------------------------------------------------
 
 ; d0 = channel number
+; d1-d2, a0-a1 = scratch
 restore_fm_instr:
 	moveq   #0, d1
 	lea     SOUNDRAM_instrs, a0
@@ -982,53 +984,56 @@ restore_fm_instr:
 
 ; d0 = channel number (0-2, 4-6)
 ; d1 = instrument number
-; d2-d4, a0 = scratch
+; d2, a0-a1 = scratch
 ym_load_instr:
-	; Point a0 to instrument data (in EIF format)
-	lea     DATA_fm_instr_list, a0
+	; Point a1 to instrument data (in EIF format)
+	lea     DATA_fm_instr_list, a1
 	add.w   d1, d1
 	add.w   d1, d1
-	movea.l (a0, d1.w), a0
+	movea.l (a1, d1.w), a1
 
 	; Key off
 	move.w  d0, d1
 	move.w  #$28, d0
 	bsr     ym_write
 
-	; Channel within part (0-2)
-	move.b  d1, d4
-	andi.w  #3, d4
-
-	; Determine part
+	; Store channel number in d2
 	moveq   #0, d2
-	move.w  d1, d2
-	andi.w  #4, d2
-	lsl.w   #6, d2
+	move.b  d1, d2
+
+	; Check if the channel is in part II
+	btst.l  #2, d2
+	beq.s   .not_part_ii
+
+	; If so, keep the channel number within the part in the lower byte and
+	; set bit #8
+	andi.w  #3, d2
+	bset.l  #8, d2
+.not_part_ii:
 
 	moveq   #0, d0
 	moveq   #0, d1
 
 	; Feedback
 	move.b  #$B0, d0
-	add.b   d4, d0 ; Channel number
-	or.w    d2, d0 ; Part
-	move.b  (a0)+, d1
+	or.w    d2, d0   ; Channel number and part
+	move.b  (a1)+, d1
 	bsr.s   ym_write
 
 	move.b  #$30, d0 ; First YM2612 register to write to
-	add.b   d4, d0 ; Channel number
-	or.w    d2, d0 ; Part
-	move.l  #27, d3 ; Number of registers to write minus one
+	or.w    d2, d0   ; Channel number and part
+
+	move.l  #27, d2  ; Number of registers to write minus one
 .loop:
-	move.b  (a0)+, d1
+	move.b  (a1)+, d1
 	bsr.s   ym_write
 	addi.b  #4, d0
-	dbf     d3, .loop
+	dbf     d2, .loop
 
 	rts
 
 ; ------------------------------------------------------------------------------
-; Subroutine that changes the frequency and does key on/key off on the YM2612
+; Subroutine that changes the frequency and does a key on/key off on the YM2612
 ;
 ; d3 = The lower byte holds the channel number (0-2, 4-6), while bits 8-A
 ;      determine the actions to be performed:
@@ -1036,8 +1041,8 @@ ym_load_instr:
 ;      9 - Key on
 ;      A - Change frequency
 ;
-; d4 = Frequency (if bit A of d0 is set)
-; d0-d2 = scratch
+; d4 = Frequency (if bit A of d3 is set)
+; d0-d2 = Scratch
 ym_update_freq:
 	; Channel number within part (0-2)
 	move.b  d3, d2
@@ -1094,25 +1099,25 @@ ym_update_freq:
 
 ; ------------------------------------------------------------------------------
 ; d0 = register number on lower byte; bit #8 to select part (I or II)
-; d1 = value
-; a1 = scratch
+; d1 = value to write
+; a0 = scratch
 ym_write:
-	lea     FM_DATA, a1 ; Data port
+	lea     FM_DATA, a0 ; Data port
 
 	btst.l  #8, d0
 	beq.s   .not_part_ii
-	addq.w  #2, a1
+	addq.w  #2, a0
 .not_part_ii:
 
 .wait1:
 	btst.b  #7, FM_DATA
 	bne.s   .wait1    ; Wait while the YM2612 is busy
-	move.b  d0, (a1)+ ; Write register number
+	move.b  d0, (a0)+ ; Write register number
 
 .wait2:
 	btst.b  #7, FM_DATA
 	bne.s   .wait2    ; Wait while the YM2612 is busy
-	move.b  d1, (a1)  ; Write value to register
+	move.b  d1, (a0)  ; Write value to register
 
 	rts
 
@@ -1122,11 +1127,11 @@ sound_update_vibrato:
 	lea     SOUNDRAM_vibrato, a0
 	lea     SOUNDRAM_psg_instrs, a1
 	lea     psg_vibrato_table(pc), a2
-	moveq   #0, d6 ; Channel number (0, 1, 2)
-	moveq   #(3-1), d7 ; Number of PSG tone channels minus one
+	moveq   #0, d1 ; Channel number (0, 1, 2)
+	moveq   #(3-1), d2 ; Number of PSG tone channels minus one
 .channels_loop:
 	; Skip channel if vibrato is not enabled on it
-	btst.b  d6, SOUNDRAM_vibrato_enable
+	btst.b  d1, SOUNDRAM_vibrato_enable
 	beq.s   .next_channel
 
 	; Skip channel if it is silent
@@ -1134,7 +1139,7 @@ sound_update_vibrato:
 	beq.s   .next_channel
 
 	; Apply vibrato
-	move.w  d6, d0
+	move.w  d1, d0
 	add.w   d0, d0
 	add.w   d0, d0
 	move.w  2(a0, d0.w), d0
@@ -1148,52 +1153,47 @@ sound_update_vibrato:
 	andi.w  #7, 2(a0)
 
 .next_channel:
-	addq.w  #1, d6
+	addq.w  #1, d1
 	addq.w  #4, a0
 	addq.w  #8, a1
-	dbf     d7, .channels_loop
+	dbf     d2, .channels_loop
 
 	rts
 
 ; ------------------------------------------------------------------------------
 
 sound_update_psg:
-	lea     PSG_DATA, a5
-	lea     SOUNDRAM_psg_instrs, a6
-	moveq   #0, d5 ; Store PSG channel (0, $20, $40, $60) in d5
-	moveq   #0, d6
-	moveq   #(4-1), d7 ; Number of PSG channels minus one
+	lea     PSG_DATA, a1
+	lea     SOUNDRAM_psg_instrs, a2
+	moveq   #0, d3 ; Store PSG channel (0, $20, $40, $60) in d3
+	moveq   #(4-1), d4 ; Number of PSG channels minus one
 
 .update_psg_channel:
 	; If the current channel has no envelope, skip it
-	tst.l   (a6)
+	tst.l   (a2)
 	beq     .next_channel
 
-	; Store new frequency in d6
-	move.w  6(a6), d6
+	; Store new frequency in d1
+	move.w  6(a2), d1
 
 	; If there is no new frequency, skip
-	tst.w   d6
+	tst.w   d1
 	beq.s   .advance_envelope
 
 	; Check for silent channel
-	cmpi.w  #$FFFF, d6
+	cmpi.w  #$FFFF, d1
 	bne.s   .no_silence
 
 	; Silence PSG channel
-	move.b  d5, d0
+	move.b  d3, d0
 	ori.b   #$9F, d0
-	move.b  d0, (a5)
+	move.b  d0, (a1)
 
 	bra     .next_channel
 
 .no_silence:
-	; Store frequency in d1 with key on bit cleared
-	move.w  d6, d1
-	bclr.l  #$F, d1
-
 	; Check if it is the noise channel (last iteration of the loop)
-	tst.w   d7
+	tst.w   d4
 	beq.s   .noise_channel
 
 	; Otherwise, it is a tone channel
@@ -1201,12 +1201,12 @@ sound_update_psg:
 	; Write the new frequency value on the PSG
 	move.w  d1, d2
 	andi.w  #$0F, d2
-	move.b  d5, d0
+	move.b  d3, d0
 	or.b    d2, d0
 	ori.b   #$80, d0
-	move.b  d0, (a5)
+	move.b  d0, (a1)
 	lsr.w   #4, d1
-	move.b  d1, (a5)
+	move.b  d1, (a1)
 
 	bra.s   .reset_new_note
 
@@ -1214,21 +1214,21 @@ sound_update_psg:
 	; Write the new noise type value on the PSG
 	move.b  d1, d0
 	ori.b   #$E0, d0
-	move.b  d0, (a5)
+	move.b  d0, (a1)
 
 .reset_new_note:
-	clr.w   6(a6)
+	clr.w   6(a2)
 
 .advance_envelope:
 	; Store current envelope position in d2
 	moveq   #0, d2
-	move.b  5(a6), d2
+	move.b  5(a2), d2
 
 	; Find next envelope value and store it in d1
-	movea.l (a6), a3
-	adda.w  d2, a3
+	movea.l (a2), a0
+	adda.w  d2, a0
 	moveq   #0, d1
-	move.b  (a3), d1
+	move.b  (a0), d1
 
 	; Check if it is a loop start ($FE) or restart ($FF)
 	cmpi.b  #$FE, d1
@@ -1240,31 +1240,31 @@ sound_update_psg:
 .set_loop_point:
 	; Advance envelope position
 	addq.b  #1, d2
-	move.b  d2, 4(a6) ; Store loop position
-	move.b  d2, 5(a6)
+	move.b  d2, 4(a2) ; Store loop position
+	move.b  d2, 5(a2)
 	bra.s   .advance_envelope
 
 .go_to_loop:
 	; Move back to loop start
-	move.b  4(a6), d2
-	move.b  d2, 5(a6)
+	move.b  4(a2), d2
+	move.b  d2, 5(a2)
 	bra.s   .advance_envelope
 
 .set_volume:
 	; Write the new volume value on the PSG
-	move.b  d5, d0
+	move.b  d3, d0
 	or.b    d1, d0
 	ori.b   #$90, d0
-	move.b  d0, (a5)
+	move.b  d0, (a1)
 
 	; Advance envelope position
 	addq.b  #1, d2
-	move.b  d2, 5(a6)
+	move.b  d2, 5(a2)
 
 .next_channel:
-	addq.w  #8, a6
-	addi.b  #$20, d5
-	dbf     d7, .update_psg_channel
+	addq.w  #8, a2
+	addi.b  #$20, d3
+	dbf     d4, .update_psg_channel
 
 	rts
 

@@ -97,13 +97,6 @@ menu_update:
 	adda.w  d1, a0
 	move.b  d0, (a0)
 
-	; Play a sound effect if the selected item changed
-	cmp.b   (RAM_menu_selected_item_prev).w, d0
-	beq.s   .no_selection_change
-	move.w  #SFX_SELECT, d0
-	bsr     sound_play_sfx
-.no_selection_change:
-
 	; Return to previous menu by pressing B
 	btst.l  #4, d7
 	bne     menu_close
@@ -112,6 +105,13 @@ menu_update:
 	andi.b  #$E0, d7
 	bne.s   menu_confirm
 
+	; Play a sound effect if the selected item changed
+	cmp.b   (RAM_menu_selected_item_prev).w, d0
+	beq.s   .ret
+	move.w  #SFX_SELECT, d0
+	bra     sound_play_sfx
+
+.ret:
 	rts
 
 ; ------------------------------------------------------------------------------
