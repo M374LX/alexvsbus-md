@@ -212,7 +212,8 @@ handle_pause:
 	; Open pause menu
 	move.b  #SCR_MENU, (RAM_screen_type_next).w
 	moveq   #MENU_PAUSE, d0
-	bra     menu_open
+	bsr     menu_open
+	bra     sound_stop_sfx
 
 .no_pause:
 	rts
