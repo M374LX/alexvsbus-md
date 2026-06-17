@@ -240,6 +240,8 @@ sound_play_sfx:
 
 ; ------------------------------------------------------------------------------
 
+; Breaks
+;   d0-d1/a0
 sound_pause:
 	bset.b  #0, SOUNDRAM_flags ; Set "paused" flag
 
@@ -247,6 +249,8 @@ sound_pause:
 
 ; ------------------------------------------------------------------------------
 
+; Breaks
+;   d0-d1/a0
 sound_stop:
 	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
 	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
