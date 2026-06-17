@@ -174,8 +174,12 @@ sound_init:
 
 ; ------------------------------------------------------------------------------
 
-; d0 = BGM number
-; Breaks: d0, a0
+; Input
+;   d0.w - BGM track number
+;
+; Breaks
+;   d0-d1/a0
+;
 sound_play_bgm:
 	bclr.b  #0, SOUNDRAM_flags ; Clear "paused" flag
 
@@ -211,8 +215,11 @@ sound_resume_bgm:
 
 ; ------------------------------------------------------------------------------
 
-; d0 = SFX number
-; Breaks: d0-d3, a0-a2
+; Input
+;   d0.w - SFX number
+;
+; Breaks
+;   d0-d3/a0-a2
 sound_play_sfx:
 	; Find stream start location and store it in a2
 	add.w   d0, d0
@@ -250,6 +257,8 @@ sound_stop:
 
 ; ------------------------------------------------------------------------------
 
+; Breaks
+;   d0-d1/a0
 sound_silence_all_channels:
 	; Silence all four PSG channels
 	lea     PSG_DATA, a0
@@ -330,11 +339,11 @@ sound_update:
 ; ------------------------------------------------------------------------------
 
 ; Input
-; a2 = Stream location in RAM
+;   a2.l - Stream location in RAM
 sound_handle_events:
 .next_event:
 	; Check if we are currently in a delay
-	tst.w   2(a2) ; Delay
+	tst.w   2(a2)     ; Delay
 	beq.s   .no_delay
 
 	; If so, decrease the delay and return
@@ -348,7 +357,7 @@ sound_handle_events:
 
 	; Store address of next event in a0
 	movea.l 8(a2), a0 ; Start position
-	adda.w  (a2), a0 ; Position
+	adda.w  (a2), a0  ; Position
 
 	; Get next event
 	move.b  (a0)+, d0
@@ -446,7 +455,7 @@ sound_handle_events:
 	; Apply octave
 	add.w   d2, d4
 
-	move.w  d0, d3 ; Channel number
+	move.w  d0, d3     ; Channel number
 	andi.w  #7, d3
 	ori.w   #$0700, d3 ; Key off, key on, change frequency
 	bsr     ym_update_freq
@@ -617,7 +626,7 @@ sound_handle_events:
 	btst.l  #$10, d0
 	bne     .next_event
 
-	; Move next parameter (the frequency) do d4 (two bytes)
+	; Move next parameter (the frequency) to d4 (two bytes)
 	move.b  (a0)+, d4
 	lsl.w   #8, d4
 	move.b  (a0), d4
@@ -637,7 +646,7 @@ sound_handle_events:
 	btst.l  #$10, d0
 	bne     .next_event
 
-	; Move next parameter (the frequency) do d1 (two bytes)
+	; Move next parameter (the frequency) to d1 (two bytes)
 	move.b  1(a0), d1
 	lsl.w   #4, d1
 	or.b    (a0), d1
@@ -715,7 +724,7 @@ sound_handle_events:
 	; Advance to next event position
 	addq.w  #2, (a2)
 
-	; Move next parameter (the instrument number) do d1
+	; Move next parameter (the instrument number) to d1
 	move.b  (a0), d1
 
 	; Keep channel number in d0
@@ -846,7 +855,8 @@ sound_handle_events:
 
 ; ------------------------------------------------------------------------------
 
-; Breaks: d0-d3, a0-a1
+; Breaks
+;   d0-d3/a0-a1
 sound_stop_sfx:
 	move.b  SOUNDRAM_locked_channels+1, d3
 
@@ -921,12 +931,18 @@ sound_stop_sfx:
 
 ; ------------------------------------------------------------------------------
 
-; d0 = channel number
-; Breaks: d1, d2, a0
+; Subroutine to restore a PSG instrument used by the BGM track when a sound
+; effect ends
+;
+; Input
+;   d0.b - Channel number
+;
+; Breaks
+;   d1-d2/a0
 restore_psg_instr:
 	; Silence channel
 	moveq   #0, d1
-	move.w  d0, d1
+	move.b  d0, d1
 	add.w   d1, d1
 	add.w   d1, d1
 	add.w   d1, d1
@@ -941,7 +957,12 @@ restore_psg_instr:
 
 ; ------------------------------------------------------------------------------
 
-; Breaks: d1, d2, a0
+; Input
+;   d0.b - Channel number
+;   d1.w - Instrument number
+;
+; Breaks
+;   d1-d2/a0
 psg_load_instr:
 	; Store envelope location in d2
 	lea     DATA_psg_instr_list, a0
@@ -971,8 +992,14 @@ psg_load_instr:
 
 ; ------------------------------------------------------------------------------
 
-; d0 = channel number
-; d1-d2, a0-a1 = scratch
+; Subroutine to restore an FM instrument used by the BGM track when a sound
+; effect ends
+;
+; Input
+;   d0.w - channel number
+;
+; Breaks
+;   d0-d2/a0-a1
 restore_fm_instr:
 	moveq   #0, d1
 	lea     SOUNDRAM_instrs, a0
@@ -982,9 +1009,12 @@ restore_fm_instr:
 
 ; ------------------------------------------------------------------------------
 
-; d0 = channel number (0-2, 4-6)
-; d1 = instrument number
-; d2, a0-a1 = scratch
+; Input
+;   d0.w - Channel number (0-2, 4-6)
+;   d1.w - Instrument number
+;
+; Breaks
+;   d0-d2/a0-a1
 ym_load_instr:
 	; Point a1 to instrument data (in EIF format)
 	lea     DATA_fm_instr_list, a1
@@ -1033,16 +1063,19 @@ ym_load_instr:
 	rts
 
 ; ------------------------------------------------------------------------------
+
 ; Subroutine that changes the frequency and does a key on/key off on the YM2612
 ;
-; d3 = The lower byte holds the channel number (0-2, 4-6), while bits 8-A
-;      determine the actions to be performed:
-;      8 - Key off
-;      9 - Key on
-;      A - Change frequency
+; Input
+;   d3.w - The lower byte holds the channel number (0-2, 4-6), while bits 8-A
+;          determine the actions to be performed:
+;            #8 - Key off
+;            #9 - Key on
+;            #A - Change frequency
+;   d4.w - Frequency (if bit A of d3 is set)
 ;
-; d4 = Frequency (if bit A of d3 is set)
-; d0-d2 = Scratch
+; Breaks
+;   d0-d2/a0
 ym_update_freq:
 	; Channel number within part (0-2)
 	move.b  d3, d2
@@ -1054,6 +1087,7 @@ ym_update_freq:
 	bset.l  #8, d2
 .not_part_ii:
 
+	; Determine if a key off should be performed
 	btst.l  #8, d3
 	beq.s   .skip_key_off
 
@@ -1064,6 +1098,7 @@ ym_update_freq:
 	bsr.s   ym_write
 .skip_key_off:
 
+	; Determine if a frequency change should be performed
 	btst.l  #$A, d3
 	beq.s   .skip_freq_change
 
@@ -1084,6 +1119,7 @@ ym_update_freq:
 	bsr.s   ym_write
 .skip_freq_change:
 
+	; Determine if a key on should be performed
 	btst.l  #9, d3
 	beq.s   .skip_key_on
 
@@ -1098,9 +1134,13 @@ ym_update_freq:
 	rts
 
 ; ------------------------------------------------------------------------------
-; d0 = register number on lower byte; bit #8 to select part (I or II)
-; d1 = value to write
-; a0 = scratch
+
+; Input
+;   d0.w - Register number on lower byte; bit #8 to select part (I or II)
+;   d1.w - Value to write
+;
+; Breaks
+;   a0
 ym_write:
 	lea     FM_DATA, a0 ; Data port
 
@@ -1127,7 +1167,7 @@ sound_update_vibrato:
 	lea     SOUNDRAM_vibrato, a0
 	lea     SOUNDRAM_psg_instrs, a1
 	lea     psg_vibrato_table(pc), a2
-	moveq   #0, d1 ; Channel number (0, 1, 2)
+	moveq   #0, d1     ; Channel number (0, 1, 2)
 	moveq   #(3-1), d2 ; Number of PSG tone channels minus one
 .channels_loop:
 	; Skip channel if vibrato is not enabled on it
@@ -1165,7 +1205,7 @@ sound_update_vibrato:
 sound_update_psg:
 	lea     PSG_DATA, a1
 	lea     SOUNDRAM_psg_instrs, a2
-	moveq   #0, d3 ; Store PSG channel (0, $20, $40, $60) in d3
+	moveq   #0, d3     ; Store PSG channel ($00, $20, $40, $60) in d3
 	moveq   #(4-1), d4 ; Number of PSG channels minus one
 
 .update_psg_channel:
@@ -1189,7 +1229,7 @@ sound_update_psg:
 	ori.b   #$9F, d0
 	move.b  d0, (a1)
 
-	bra     .next_channel
+	bra.s   .next_channel
 
 .no_silence:
 	; Check if it is the noise channel (last iteration of the loop)
