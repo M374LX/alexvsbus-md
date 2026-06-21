@@ -174,16 +174,6 @@ SOL_PASSAGEWAY_EXIT:            equ 6
 
 FLOOR_Y:                        equ 264
 
-; Object types
-OBJ_NULL:                       equ 0
-OBJ_BANANA_PEEL:                equ 1
-OBJ_GUSH:                       equ 2
-OBJ_GUSH_CRACK:                 equ 3
-OBJ_PUSH_CRATE:                 equ 4
-OBJ_PUSH_CRATE_WITH_ARROW:      equ 5
-OBJ_ROPE:                       equ 6
-OBJ_SPRING:                     equ 7
-
 ; Vehicle types
 VEH_NONE:                       equ 0
 VEH_PARKED_CAR_BLUE:            equ 1

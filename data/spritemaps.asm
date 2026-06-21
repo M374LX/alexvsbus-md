@@ -179,9 +179,6 @@ DATA_spritemap_crate:
 	dc.w    0, 0, $6, $0000|SPR_CRATE
 	dc.w    8, 0, $6, $1800|SPR_CRATE
 
-DATA_spritemap_gush_crack:
-	dc.w    0, 0, $4, $0000|SPR_GUSH_CRACK
-
 DATA_spritemap_rope_vertical:
 	dc.w    0,  0, $3, $0000|SPR_VERTICAL_ROPE_TOP
 	dc.w    0, 32, $1, $0000|SPR_VERTICAL_ROPE_BOTTOM

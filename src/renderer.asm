@@ -2086,92 +2086,159 @@ add_play_sprites:
 	bsr     add_spritemap
 .no_bus_stop_sign_2:
 
-;----------------------------------------;
-; Add sprites for objects using RAM_objs ;
-;----------------------------------------;
-
-	lea     (RAM_visible_gushes).w, a3
-	clr.b   (RAM_num_visible_gushes).w
+;--------------------------------------------------;
+; Add sprites for banana peels that are not moving ;
+;--------------------------------------------------;
 
 	moveq   #0, d7
-	move.b  (RAM_num_objs).w, d7
-	beq     .objs_done
+	move.b  (RAM_num_banana_peels).w, d7
+	beq.s   .banana_peels_done
 
-	lea     (RAM_objs).w, a2
-	subq.w  #1, d7
+	lea     (RAM_banana_peels).w, a2
+	subq.b  #1, d7
 
-	moveq   #-32, d5
-	move.w  #SCREEN_W, d6
+.banana_peels_loop:
+	; Read X position of the peel and skip it if inactive
+	move.w  (a2), d0
+	beq.s   .next_banana_peel
 
-.objs_loop:
-	move.w  2(a2), d0 ; X
+	; If the peel is offscreen, skip it
 	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_banana_peel
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .next_banana_peel
 
-	; Skip objects that are outside the screen (X axis)
-	cmp.w   d5, d0
-	ble     .objs_next
-	cmp.w   d6, d0
-	bge     .objs_next
-
-	move.w  4(a2), d1 ; Y
-	sub.w   (RAM_draw_offset_y).w, d1
-
-	; Skip objects that are outside the screen (Y axis)
-	cmp.w   #SCREEN_H, d1
-	bge     .objs_next
-
-	add.w   (RAM_draw_offset_x).w, d0
-	add.w   (RAM_draw_offset_y).w, d1
-
-	moveq   #0, d2    ; Maximum number of map entries (minus one)
-
-	; Jump to label corresponding to object type
-	move.w  (a2), d3
-	add.w   d3, d3
-	jmp     .objs_jump_table(pc, d3.w)
-.objs_jump_table:
-	bra.s   .objs_next          ; OBJ_NULL
-	bra.s   .objs_banana_peel   ; OBJ_BANANA_PEEL
-	bra.s   .objs_gush          ; OBJ_GUSH
-	bra.s   .objs_gush_crack    ; OBJ_GUSH_CRACK
-	bra.s   .objs_push_crate    ; OBJ_PUSH_CRATE
-	bra.s   .objs_push_crate    ; OBJ_PUSH_CRATE_WITH_ARROW
-	bra.s   .objs_rope_vertical ; OBJ_ROPE
-	bra.s   .objs_spring        ; OBJ_SPRING
-
-.objs_banana_peel:
+	move.w  (a2), d0  ; X position
+	move.w  2(a2), d1 ; Y position
 	lea     DATA_spritemap_banana_peel, a0
-	bra.s   .objs_add_map
+	moveq   #0, d2
+	bsr     add_spritemap
 
-.objs_gush:
-	; Add it to the list of visible gushes without drawing it for now
-	move.w  2(a2), (a3)+ ; X
-	move.w  4(a2), (a3)+ ; Y
-	addq.b  #1, (RAM_num_visible_gushes).w
-	bra.s   .objs_next
+.next_banana_peel:
+	addq.w  #4, a2
+	dbf     d7, .banana_peels_loop
+.banana_peels_done:
 
-.objs_gush_crack:
-	lea     DATA_spritemap_gush_crack, a0
-	bra.s   .objs_add_map
+;---------------------------------;
+; Add sprites for pushable crates ;
+;---------------------------------;
 
-.objs_push_crate:
+	lea     (RAM_pushable_crates).w, a2
+	moveq   #(MAX_PUSHABLE_CRATES-1), d7
+
+.pushable_crates_loop:
+	; Read X position of the crate
+	move.w  (a2), d0
+
+	; If it is zero, there are no more crates
+	beq.s   .pushable_crates_done
+
+	; If the crate is offscreen, skip it
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_pushable_crate
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .pushable_crates_done ; No more crates to draw
+
+	move.w  (a2), d0
+	move.w  #240, d1
 	lea     DATA_spritemap_crate, a0
 	moveq   #1, d2
-	bra.s   .objs_add_map
+	bsr     add_spritemap
 
-.objs_rope_vertical:
+.next_pushable_crate:
+	addq.w  #8, a2
+	dbf     d7, .pushable_crates_loop
+.pushable_crates_done:
+
+;------------------------------------------------------;
+; Add sprites for ropes (except the one being grabbed) ;
+;------------------------------------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_ropes).w, d7
+	beq.s   .ropes_done
+
+	movea.l (RAM_ptr_ropes).w, a2
+	subq.b  #1, d7
+
+	; Use d6 to keep track of the rope index
+	moveq   #0, d6
+
+.ropes_loop:
+	; Skip the rope being grabbed, if any
+	cmp.b   (RAM_grabbed_rope_index).w, d6
+	beq.s   .next_rope
+
+	; If the rope is offscreen, skip it
+	move.w  (a2), d0
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_rope
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .ropes_done ; No more ropes to draw
+
+	move.w  (a2), d0 ; X position
+	move.w  #(ROPE_Y+5), d1 ; Y position
 	lea     DATA_spritemap_rope_vertical, a0
 	moveq   #1, d2
-	bra.s   .objs_add_map
+	bsr     add_spritemap
 
-.objs_spring:
+.next_rope:
+	addq.w  #2, a2
+	addq.b  #1, d6
+	dbf     d7, .ropes_loop
+.ropes_done:
+
+;----------------------------------------;
+; Add sprites for the rope being grabbed ;
+;----------------------------------------;
+
+	; Skip if no rope is being grabbed
+	tst.b   (RAM_grabbed_rope_index).w
+	blt.s   .no_grabbed_rope
+
+	move.w  (RAM_grabbed_rope_x).w, d0
+	move.w  #(ROPE_Y+5), d1
+	lea     DATA_spritemap_rope_vertical, a0
+	moveq   #1, d2
+	bsr     add_spritemap
+.no_grabbed_rope:
+
+;-------------------------;
+; Add sprites for springs ;
+;-------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_springs).w, d7
+	beq.s   .springs_done
+
+	; Use d6 to keep track of the spring index
+	moveq   #0, d6
+
+	movea.l (RAM_ptr_springs).w, a2
+	subq.b  #1, d7
+
+.springs_loop:
+	; If the spring is offscreen, skip it
+	move.w  (a2), d0
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_spring
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .springs_done ; No more springs to draw
+
+	move.w  (a2), d0  ; X position
+	move.w  2(a2), d1 ; Y position
 	lea     DATA_spritemap_spring, a0
 	moveq   #1, d2
 
 	; If this is not the spring the player character has hit, do not animate
-	cmpa.l  (RAM_hit_spring).w, a2
-	bne.s   .objs_add_map
+	cmp.b   (RAM_hit_spring).w, d6
+	bne.s   .springs_add_spritemap
 
+	; Otherwise, find the animation frame
 	moveq   #0, d3
 	move.b  (RAM_anims+ANIM_HIT_SPRING).w, d3
 	add.w   d3, d3
@@ -2180,29 +2247,29 @@ add_play_sprites:
 	add.w   d3, d3
 	adda.w  d3, a0
 
-.objs_add_map:
+.springs_add_spritemap:
 	bsr     add_spritemap
-.objs_next:
-	addq.w  #8, a2
-	dbf     d7, .objs_loop
-.objs_done:
 
-;------------------------;
-; Add sprites for gushes ;
-;------------------------;
+.next_spring:
+	addq.w  #4, a2
+	addq.b  #1, d6
+	dbf     d7, .springs_loop
+.springs_done:
 
-	tst.b   (RAM_num_visible_gushes).w
-	beq     .no_gushes
+;----------------------------------------;
+; Add sprites for gushes and gush cracks ;
+;----------------------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_gushes).w, d7
+	beq     .gushes_done
+
+	lea     (RAM_gushes).w, a2
+	subq.w  #1, d7
 
 	; Find location of next sprite within the buffer and store it in a0
 	lea     (RAM_sprite_buffer).w, a0
 	adda.w  (RAM_sprite_buffer_next_offs).w, a0
-
-	lea     (RAM_visible_gushes).w, a2
-
-	moveq   #0, d7
-	move.b  (RAM_num_visible_gushes).w, d7
-	subq.w  #1, d7
 
 	; Store current gush animation frame in d4
 	moveq   #0, d4
@@ -2210,13 +2277,26 @@ add_play_sprites:
 
 .gushes_loop:
 	; Store the X position of the gush in d1
-	move.w  (a2)+, d1
+	move.w  (a2), d1
 
 	; Apply camera offset
 	sub.w   (RAM_draw_offset_x).w, d1
 
+	; If the gush is offscreen, skip if
+	cmp.w   #-32, d1
+	ble     .next_gush
+	cmp.w   #SCREEN_W, d1
+	bge     .gushes_done ; No more gushes to draw
+
 	; Apply (128, 128) offset used by the VDP
 	addi.w  #128, d1
+
+	; Store the Y position of the gush in d5
+	move.w  2(a2), d5
+
+	; Check if it is a gush crack
+	tst.b   14(a2)
+	bne.s   .gush_is_crack
 
 	; Add gush hole sprite
 	move.w  #(128+263), d2
@@ -2226,7 +2306,7 @@ add_play_sprites:
 	bsr     add_sprite_simple
 
 	; Store the Y position of the gush in d2
-	move.w  (a2)+, d2
+	move.w  d5, d2
 
 	; Apply (128, 128) offset used by the VDP
 	addi.w  #128, d2
@@ -2272,9 +2352,29 @@ add_play_sprites:
 	bge.s   .next_gush
 	bsr     add_sprite_simple
 
+	bra.s   .next_gush
+
+.gush_is_crack:
+	; Store the Y position of the gush crack in d2
+	move.w  d5, d2
+
+	; Apply (128, 128) offset used by the VDP
+	addi.w  #128, d2
+
+	; Apply camera offset
+	sub.w   (RAM_draw_offset_y).w, d2
+
+	; Set sprite size for gush crack
+	moveq   #4, d3
+
+	; Add gush crack sprites
+	move.w  #SPR_GUSH_CRACK, d0
+	bsr     add_sprite_simple
+
 .next_gush:
+	lea     16(a2), a2
 	dbf     d7, .gushes_loop
-.no_gushes:
+.gushes_done:
 
 ;-------------------------------------------;
 ; Add background sprites for overhead signs ;
@@ -2297,14 +2397,11 @@ add_play_sprites:
 
 	sub.w   (RAM_draw_offset_x).w, d1
 
-	; Skip signs to the left of the visible area
+	; If the sign if offscreen, skip it
 	cmpi.w  #-32, d1
 	ble.s   .overhead_signs_bg_next
-
-	; If the sign is to the right of the visible area, then there are no
-	; more visible signs, as the signs are always sorted by X position
 	cmpi.w  #SCREEN_W, d1
-	bge.s   .overhead_signs_bg_done
+	bge.s   .overhead_signs_bg_done ; No more signs to draw
 
 	sub.w   (RAM_draw_offset_y).w, d2
 
@@ -2321,9 +2418,9 @@ add_play_sprites:
 	dbf     d7, .overhead_signs_bg_loop
 .overhead_signs_bg_done:
 
-;-----------------------------------------;
-; Add sprites for wheels of parked trucks ;
-;-----------------------------------------;
+;---------------------------------------------;
+; Add sprites for the wheels of parked trucks ;
+;---------------------------------------------;
 
 	moveq   #0, d7
 	move.b  (RAM_num_parked_vehicles).w, d7
@@ -2351,7 +2448,7 @@ add_play_sprites:
 	addi.w  #35, d0
 	blt.s   .parked_vehicle_wheels_next
 
-	; Find X position of rear wheel
+	; Find the X position of the rear wheel
 	move.w  d3, d0
 	add.w   d0, d0
 	add.w   d0, d0
@@ -2500,13 +2597,13 @@ add_play_sprites:
 	moveq   #(MAX_PASSAGEWAYS-1), d7 ; Remaining passageways counter
 
 .passageways_loop:
+	; No more passageways
+	tst.w   (a2)
+	ble.s   .passageways_done
+
 	; If the passageway exit has been opened, skip to the next passageway
 	btst.b  d6, (RAM_passageway_opened_exits).w
 	bne.s   .next_passageway
-
-	; Ignore inexistent passageways
-	tst.w   (a2)
-	ble.s   .next_passageway
 
 	; Draw passageway closed exit
 	move.w  2(a2), d0
@@ -2518,8 +2615,9 @@ add_play_sprites:
 
 .next_passageway:
 	addq.w  #1, d6
-	addq.w  #4, a2
+	addq.w  #8, a2
 	dbf     d7, .passageways_loop
+.passageways_done:
 
 ;---------------------------------;
 ; Add sprites for the passing car ;
@@ -2607,7 +2705,7 @@ add_play_sprites:
 	; Find X position of the rear wheel of the first car (calculated from
 	; the X position of the bus)
 	move.w  (RAM_bus_x).w, d0
-	addi.w  #((50*8)+24), d0
+	addi.w  #(400+24), d0
 
 	move.w  #(PASSING_CAR_Y+40), d1
 

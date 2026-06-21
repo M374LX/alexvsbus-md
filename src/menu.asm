@@ -352,7 +352,7 @@ menu_confirm:
 
 handle_cheat:
 	; If the cheat code is already activated, skip
-	tst.b   (RAM_progress_cheat).w
+	tst.b   (RAM_progress_cheat_enabled).w
 	bne.s   .ret
 
 	moveq   #0, d0
@@ -375,7 +375,7 @@ handle_cheat:
 	bge.s   .ret
 
 	; Activate the cheat code
-	move.b  #1, (RAM_progress_cheat).w
+	move.b  #1, (RAM_progress_cheat_enabled).w
 
 	; Play the coin sound effect
 	move.w  #SFX_COIN, d0
@@ -393,7 +393,7 @@ determine_disabled_items:
 	clr.b   (RAM_menu_disabled_items).w
 
 	; No items are disabled if the progress cheat code is activated
-	tst.b   (RAM_progress_cheat).w
+	tst.b   (RAM_progress_cheat_enabled).w
 	bne.s   .ret
 
 	move.b  (RAM_menu_type).w, d0

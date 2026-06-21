@@ -27,15 +27,17 @@
 ; ------------------------------------------------------------------------------
 
 play_clear:
+	; Clear the entire area between RAM_play_clear_start and
+	; RAM_play_clear_end with zeros
 	moveq   #0, d0
-	moveq   #0, d7
 	lea     (RAM_play_clear_start).w, a0
 	move.w  #((RAM_play_clear_end-RAM_play_clear_start)/4)-1, d7
 .play_clear_loop:
 	move.l  d0, (a0)+
 	dbf     d7, .play_clear_loop
 
-	bset.b  #0, (RAM_play_flags).w ; Set "ignore user input" flag
+	; Set "ignore user input" flag
+	bset.b  #0, (RAM_play_flags).w
 
 	move.b  #$90, (RAM_time).w
 	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
@@ -49,38 +51,17 @@ play_clear:
 	clr.b   (RAM_player_state).w
 	bsr     handle_player_state_change
 
-	move.l  #(24<<16), (RAM_bus_x).w
+	move.w  #24, (RAM_bus_x).w
 	move.w  #24, (RAM_bus_init_x).w
 
 	moveq   #NONE, d0
 
-	move.b  d0, (RAM_grabbed_rope_obj).w
+	move.b  d0, (RAM_grabbed_rope_index).w
 	move.b  d0, (RAM_cur_passageway).w
-
-	; Clear moving banana peels
-	move.l  d0, (RAM_moving_peels+(32*0)).w
-	move.l  d0, (RAM_moving_peels+(32*1)).w
 
 	; Make passing car and hen inactive
 	move.l  d0, (RAM_passing_car_x).w
 	move.l  d0, (RAM_hen_x).w
-
-	; Clear gushes
-	clr.b   (RAM_num_gushes).w
-	moveq   #MAX_GUSHES-1, d7
-	lea     (RAM_gushes+12).w, a0
-.gushes_clear_loop:
-	move.b  d0, (a0)
-	lea     16(a0), a0
-	dbf     d7, .gushes_clear_loop
-
-	; Clear pushable crates
-	moveq   #MAX_PUSHABLE_CRATES-1, d7
-	lea     (RAM_pushable_crates+7).w, a0
-.pushable_crates_clear_loop:
-	move.b  d0, (a0)
-	addq.w  #8, a0
-	dbf     d7, .pushable_crates_clear_loop
 
 	; Initialize animations
 	moveq   #0, d0
@@ -500,19 +481,17 @@ move_objects:
 	; Stop the moving peel
 	clr.l   (a0)
 
-	; Find the next available entry within RAM_objs
+	; Find the next available entry within RAM_banana_peels
 	moveq   #0, d0
-	move.b  (RAM_num_objs).w, d0
+	move.b  (RAM_num_banana_peels).w, d0
 	add.w   d0, d0
 	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a1
+	lea     (RAM_banana_peels).w, a1
 	adda.w  d0, a1
 
-	addq.b  #1, (RAM_num_objs).w
+	addq.b  #1, (RAM_num_banana_peels).w
 
-	; Add a peel to RAM_objs
-	move.w  #OBJ_BANANA_PEEL, (a1)+
+	; Add a peel to RAM_banana_peels
 	move.w  20(a0), (a1)+ ; x = xdest
 	move.w  22(a0), (a1)+ ; y = ydest
 
@@ -527,20 +506,15 @@ move_objects:
 	subq.b  #1, d7
 	lea     (RAM_gushes).w, a0
 .gushes_loop:
-	; Point a1 to the object within RAM_objs corresponding to the gush
-	moveq   #0, d0
-	move.b  12(a0), d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a1
-	adda.w  d0, a1
+	; If it is a gush crack, skip
+	tst.b   14(a0)
+	bne.s   .next_gush
 
 	moveq   #0, d2
 
-	move.l  (a0), d0  ; y
-	move.l  4(a0), d1 ; yvel
-	move.w  8(a0), d2 ; ydest
+	move.l  2(a0), d0  ; y
+	move.l  6(a0), d1  ; yvel
+	move.w  10(a0), d2 ; ydest
 	swap.w  d2
 
 	add.l   d1, d0 ; Apply velocity to Y position
@@ -565,13 +539,13 @@ move_objects:
 
 	; Advance gush movement pattern position and store it in d2
 	moveq   #0, d2
-	move.b  11(a0), d2
+	move.b  13(a0), d2
 	addq.b  #4, d2
 
 	; Point a2 to the next position of the movement pattern
 	lea     (DATA_gush_move_patterns).w, a2
 	moveq   #0, d1
-	move.b  10(a0), d1
+	move.b  12(a0), d1
 	add.w   d1, d1
 	adda.w  (a2, d1.w), a2
 	adda.w  d2, a2
@@ -587,16 +561,14 @@ move_objects:
 
 	; Set Y velocity and destination position from movement pattern
 	movea.w (a2), a3
-	move.l  (a3), 4(a0)
-	move.w  2(a2), 8(a0)
+	move.l  (a3), 6(a0) ; yvel
+	move.w  2(a2), 10(a0) ; ydest
 
 	; Store next movement pattern position
-	move.b  d2, 11(a0)
+	move.b  d2, 13(a0)
 
 .gush_update_y:
-	move.l  d0, (a0)  ; Update Y position within RAM_gushes
-	swap.w  d0
-	move.w  d0, 4(a1) ; Update Y position within RAM_objs
+	move.l  d0, 2(a0)  ; Update Y position within RAM_gushes
 
 .next_gush:
 	lea     16(a0), a0
@@ -604,9 +576,8 @@ move_objects:
 .no_gushes:
 
 	; Grabbed rope
-	move.b  (RAM_grabbed_rope_obj).w, d0
-	cmp.b   #NONE, d0
-	beq.s   .no_grabbed_rope
+	tst.b   (RAM_grabbed_rope_index).w
+	blt.s   .rope_done
 
 	; Update rope position
 	move.l  (RAM_grabbed_rope_xvel).w, d0
@@ -617,32 +588,17 @@ move_objects:
 	bge.s   .rope_xmax_reached
 	cmp.w   (RAM_grabbed_rope_xmin).w, d0
 	ble.s   .rope_xmin_reached
-	bra.s   .rope_limits_done
+	bra.s   .rope_done
 
 .rope_xmax_reached:
 	move.w  (RAM_grabbed_rope_xmax).w, (RAM_grabbed_rope_x).w
 	clr.w   (RAM_grabbed_rope_x+2).w
 	move.l  (FPSVAL_M192_PXS).w, (RAM_grabbed_rope_xvel).w
-	bra.s   .rope_limits_done
+	bra.s   .rope_done
 
 .rope_xmin_reached:
-	move.w  (RAM_grabbed_rope_xmax).w, (RAM_grabbed_rope_x).w
-	clr.w   (RAM_grabbed_rope_x+2).w
-	move.b  #NONE, (RAM_grabbed_rope_obj).w
-
-.rope_limits_done:
-	; Point a0 to the rope object within RAM_objs
-	moveq   #0, d0
-	move.b  (RAM_grabbed_rope_obj).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a0
-	adda.w  d0, a0
-
-	; Update position of the rope object within RAM_objs
-	move.w  (RAM_grabbed_rope_x).w, 2(a0)
-.no_grabbed_rope:
+	move.b  #NONE, (RAM_grabbed_rope_index).w
+.rope_done:
 
 	; Pushable crates
 	lea     (RAM_pushable_crates).w, a0
@@ -671,18 +627,6 @@ move_objects:
 	; Clear all flags except "pushed"
 	move.b  #4, 6(a0)
 .pushable_crate_x_limit_not_reached:
-
-	; Find crate object within RAM_objs
-	moveq   #0, d1
-	move.b  7(a0), d1
-	add.w   d1, d1
-	add.w   d1, d1
-	add.w   d1, d1
-	lea     (RAM_objs).w, a2
-	adda.w  d1, a2
-
-	; Update X position of the object within RAM_objs
-	move.w  d0, 2(a2)
 
 	; Update position of crate solid
 	move.w  d0, (a1)
@@ -1387,7 +1331,7 @@ handle_passageways:
 	move.l  (FPSVAL_408_PXS).w, (RAM_camera_yvel).w
 
 .next_passageway:
-	addq.w  #4, a0
+	addq.w  #8, a0
 	dbf     d7, .passageways_loop
 
 .not_entering:
@@ -1397,6 +1341,7 @@ handle_passageways:
 	; Point a0 to the current passageway
 	moveq   #0, d0
 	move.b  (RAM_cur_passageway).w, d0
+	add.w   d0, d0
 	add.w   d0, d0
 	add.w   d0, d0
 	movea.l (RAM_ptr_passageways).w, a0
@@ -1459,28 +1404,27 @@ handle_passageways:
 ; ------------------------------------------------------------------------------
 
 handle_player_interactions:
+	; Nothing to do if the player character is inactive
 	cmpi.b  #PLAYER_STATE_INACTIVE, (RAM_player_state).w
 	bne.s   .player_not_inactive
 	rts
 .player_not_inactive:
 
-	; Use d5 for the following flags:
-	; 0 - Player character collected a coin
-	; 1 - Player character slipped
-	; 2 - Player character thrown back by a gush
-	; 3 - Player character hit a spring
+	; Clear d5, which will be set if a coin is collected
 	moveq   #0, d5
 
 	; Use d7 to count the coins yet to be processed
 	moveq   #0, d7
 	move.b  (RAM_num_coins).w, d7
+
+	; Skip if there are no coins
 	beq     .coins_done
 
 	lea     (RAM_coins).w, a2
 	subq.w  #1, d7
 
-	moveq   #2, d2 ; Left and top offset of coin bounding box
-	moveq   #6, d3 ; Right and bottom offset of coin bounding box
+	moveq   #2, d2 ; Left and top offsets of coin bounding box
+	moveq   #4, d3 ; Right and bottom offsets of coin bounding box
 
 .coins_loop:
 	; Ignore inexistent coins
@@ -1490,14 +1434,14 @@ handle_player_interactions:
 	; Check bounding box overlap (X axis)
 	move.w  (RAM_player_x).w, d0
 	addi.w  #PLAYER_BOX_OFFSET_X, d0
-	move.w  (a2), d1 ; Coin right
+	move.w  (a2), d1
 	add.w   d2, d1
 	add.w   d3, d1
-	cmp.w   d1, d0
+	cmp.w   d1, d0 ; Coin right
 	bgt     .next_coin
 	addi.w  #PLAYER_BOX_WIDTH, d0
-	sub.w   d3, d1 ; Coin left
-	cmp.w   d1, d0
+	sub.w   d3, d1
+	cmp.w   d1, d0 ; Coin left
 	blt     .coins_done ; No more coins to check
 
 	; Check bounding box overlap (Y axis)
@@ -1506,16 +1450,15 @@ handle_player_interactions:
 	move.w  2(a2), d1
 	bclr.l  #$F, d1 ; Clear gold bit
 	add.w   d2, d1
-	cmp.w   d1, d0
+	cmp.w   d1, d0  ; Coin top
 	blt     .next_coin
 	sub.w   (RAM_player_height).w, d0
-	move.w  2(a2), d1
-	bclr.l  #$F, d1 ; Clear gold bit
 	add.w   d3, d1
-	cmp.w   d1, d0
+	cmp.w   d1, d0  ; Coin bottom
 	bgt.s   .next_coin
 
-	bset.l  #0, d5 ; Set d5 flag
+	; Set d5 to indicate that a coin has been collected
+	st.b    d5
 
 	; Add coin spark
 	moveq   #0, d0
@@ -1568,278 +1511,19 @@ handle_player_interactions:
 	dbf     d7, .coins_loop
 .coins_done:
 
-	; Use d6 to keep track of the current object index
-	moveq   #0, d6
-
-	; Use d7 to count the objects yet to be processed
-	moveq   #0, d7
-	move.b  (RAM_num_objs).w, d7
-	beq     .objs_done
-
-	lea     (RAM_objs).w, a2
-	subq.w  #1, d7
-
-.objs_loop:
-	; Ignore inexistent objects
-	tst.w   (a2)
-	beq     .next_obj
-
-	; Find object bounding box
-	lea     DATA_obj_bounding_boxes, a3
-	move.w  (a2), d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	adda.w  d0, a3
-
-	; The player character interacts with objects within RAM_objs only while
-	; in the normal state
-	tst.b   (RAM_player_state).w ; PLAYER_STATE_NORMAL = 0
-	bne     .next_obj
-
-	cmpi.w  #OBJ_ROPE, (a2)
-	bne.s   .use_player_bounding_box
-
-	; For ropes, check interaction using a point at offset (21, 28) from the
-	; player character
-	move.w  (RAM_player_x).w, d0
-	addi.w  #21, d0
-	move.w  2(a2), d1 ; Object left
-	add.w   (a3), d1
-	cmp.w   d1, d0
-	blt     .next_obj
-	add.w   2(a3), d1 ; Object right
-	cmp.w   d1, d0
-	bgt     .next_obj
-	move.w  (RAM_player_y).w, d0
-	addi.w  #28, d0
-	move.w  4(a2), d1
-	add.w   4(a3), d1 ; Object top
-	cmp.w   d1, d0
-	blt     .next_obj
-	move.w  4(a2), d1 ; Object bottom
-	add.w   6(a3), d1
-	cmp.w   d1, d0
-	bgt     .next_obj
-
-	bra.s   .handle_interaction
-
-.use_player_bounding_box:
-	; For objects other than a rope, check interaction using the player
-	; character's bounding box
-	move.w  (RAM_player_x).w, d0
-	addi.w  #(PLAYER_BOX_OFFSET_X+PLAYER_BOX_WIDTH), d0
-	move.w  2(a2), d1 ; Object left
-	add.w   (a3), d1
-	cmp.w   d1, d0
-	blt     .next_obj
-	subi.w  #PLAYER_BOX_WIDTH, d0
-	add.w   2(a3), d1
-	cmp.w   d1, d0
-	bgt     .next_obj
-	move.w  (RAM_player_y).w, d0
-	add.w   (RAM_player_height).w, d0
-	move.w  4(a2), d1
-	add.w   4(a3), d1
-	cmp.w   d1, d0
-	blt     .next_obj
-	sub.w   (RAM_player_height).w, d0
-	move.w  4(a2), d1
-	add.w   6(a3), d1
-	cmp.w   d1, d0
-	bgt     .next_obj
-
-.handle_interaction:
-	; Jump table for object types
-	move.w  (a2), d0
-	add.w   d0, d0
-	add.w   d0, d0
-	jmp     .obj_jump_table(pc, d0.w)
-.obj_jump_table:
-	bra.w   .next_obj        ; OBJ_NULL
-	bra.w   .obj_banana_peel ; OBJ_BANANA_PEEL
-	bra.w   .obj_gush        ; OBJ_GUSH
-	bra.w   .obj_gush_crack  ; OBJ_GUSH_CRACK
-	bra.w   .next_obj        ; OBJ_PUSH_CRATE
-	bra.w   .next_obj        ; OBJ_PUSH_CRATE_WITH_ARROW
-	bra.w   .obj_rope        ; OBJ_ROPE
-	bra.w   .obj_spring      ; OBJ_SPRING
-
-.obj_banana_peel:
-	; Set d5 flag
-	bset.l  #1, d5
-
-	lea     (RAM_moving_peels).w, a0
-
-	; Position moving peel
-	move.w  2(a2), (a0)+ ; x
-	clr.w   (a0)+
-	move.w  4(a2), (a0)+ ; y
-	clr.w   (a0)+
-
-	; Clear object type
-	clr.w   (a2)
-
-	bra     .next_obj
-
-.obj_gush:
-	; Set d5 flag
-	bset.l  #2, d5
-
-	bra     .next_obj
-
-.obj_gush_crack:
-	; Set d5 flag
-	bset.l  #2, d5
-
-	move.w  #OBJ_GUSH, (a2)
-
-	; Add crack particles
-	move.w  2(a2), d0
-	addi.w  #6, d0
-	move.w  #276, d1
-	bsr     add_crack_particles
-
-	; Get address of next gush within RAM_gushes and store it in a0
-	moveq   #0, d0
-	move.b  (RAM_num_gushes).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_gushes).w, a0
-	adda.w  d0, a0
-
-	move.w  #266, (a0)+ ; y
-	clr.w   (a0)+
-	move.l  (FPSVAL_M144_PXS).w, (a0)+ ; yvel
-	move.w  (DATA_gush_move_pattern_2+6).w, (a0)+ ; ydest
-	move.b  #1, (a0)+   ; move_pattern_index
-	clr.b   (a0)+       ; move_pattern_pos
-	move.b  d6, (a0)    ; obj
-
-	addi.b  #1, (RAM_num_gushes).w
-
-	bra     .next_obj
-
-.obj_rope:
-	; Skip the check below if the rope being processed is not the same the
-	; player character is grabbing or has just released
-	cmp.b   (RAM_grabbed_rope_obj).w, d6
-	bne.s   .not_this_rope
-
-	; Cannot grab the same rope again right after releasing it
-	move.w  (RAM_grabbed_rope_xmax).w, d0
-	subi.w  #64, d0
-	cmp.w   (RAM_grabbed_rope_x).w, d0
-	ble     .next_obj
-.not_this_rope:
-
-	; If the player character is grabbing a rope but the previously grabbed
-	; one has not returned to its initial X position, reset its X position
-	; immediately
-	cmp.b   (RAM_grabbed_rope_obj).w, d6
-	beq.s   .rope_dont_reset_x
-	cmpi.b  #NONE, (RAM_grabbed_rope_obj).w
-	beq.s   .rope_dont_reset_x
-
-	; Find rope object within RAM_objs
-	moveq   #0, d0
-	move.b  (RAM_grabbed_rope_obj).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	lea     (RAM_objs).w, a0
-	adda.w  d0, a0
-
-	; Reset X position
-	move.w  (RAM_grabbed_rope_xmin).w, d0
-	move.w  d0, 2(a0)
-
-	move.b  #NONE, (RAM_grabbed_rope_obj).w
-.rope_dont_reset_x:
-
-	; If the player character has grabbed the same rope again before it
-	; returns to its initial position, the limits of the rope's horizontal
-	; movement are already set
-	cmpi.b  #NONE, (RAM_grabbed_rope_obj).w
-	bne.s   .rope_dont_set_limits
-
-	move.w  2(a2), d0
-	move.w  d0, (RAM_grabbed_rope_xmin).w
-	addi.w  #352, d0
-	move.w  d0, (RAM_grabbed_rope_xmax).w
-.rope_dont_set_limits:
-
-	move.b  #PLAYER_STATE_GRABROPE, (RAM_player_state).w
-	move.b  d6, (RAM_grabbed_rope_obj).w
-	move.w  2(a2), (RAM_grabbed_rope_x).w
-	clr.w   (RAM_grabbed_rope_x+2).w
-	move.l  (FPSVAL_258_PXS).w, (RAM_grabbed_rope_xvel).w
-
-	bra.s   .next_obj
-
-.obj_spring:
-	tst.l   (RAM_player_yvel).w
-	blt.s   .next_obj
-
-	; The player character has hit a spring
-	move.l  (FPSVAL_M246_PXS).w, (RAM_player_yvel).w
-
-	move.l  a2, (RAM_hit_spring).w
-
-	lea     (RAM_anims+ANIM_HIT_SPRING).w, a0
-	move.b  #5, (a0)
-	move.b  3(a0), 2(a0) ; Set delay
-	move.b  #3, 4(a0)    ; Set "running" and "reverse" flags
-
-	; Set d5 flag
-	bset.l  #3, d5
-
-.next_obj:
-	lea     8(a2), a2
-	addq.b  #1, d6
-	dbf     d7, .objs_loop
-.objs_done:
-
-	; Handle d5 flags
-	btst.l  #0, d5
-	beq.s   .player_no_coin_collected
-
+	; Check if the coin sound effect needs to be played
+	tst.b   d5
+	beq.s   .dont_play_coin_sound
 	move.w  #SFX_COIN, d0
 	bsr     sound_play_sfx
-.player_no_coin_collected:
+.dont_play_coin_sound:
 
-	btst.l  #1, d5
-	beq.s   .player_no_slip
-
-	; Make peel move
-	lea     (RAM_moving_peels+8).w, a0
-	move.l  (FPSVAL_150_PXS).w,  (a0)+ ; xvel
-	move.l  (FPSVAL_M204_PXS).w, (a0)+ ; yvel
-	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
-	clr.w   (a0)+           ; xdest
-	move.w  #500, (a0)      ; ydest (below the Y limit, which is 400)
-
-	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
-
-	move.w  #SFX_SLIP, d0
-	bsr     sound_play_sfx
-.player_no_slip:
-
-	btst.l  #2, d5
-	beq.s   .player_no_throwback
-	move.b  #PLAYER_STATE_THROWBACK, (RAM_player_state).w
-
-	move.w  #SFX_HIT, d0
-	bsr     sound_play_sfx
-.player_no_throwback:
-
-	btst.l  #3, d5
-	beq.s   .player_no_spring_hit
-	move.w  #SFX_SPRING, d0
-	bsr     sound_play_sfx
-.player_no_spring_hit:
+	; The player character does not interact with objects other than coins
+	; if not in the normal state
+	tst.b   (RAM_player_state).w
+	beq.s   .player_state_normal
+	rts
+.player_state_normal:
 
 	; Handle pushable crates
 	move.b  (RAM_play_input_down).w, d0
@@ -1855,21 +1539,22 @@ handle_player_interactions:
 	move.w  (RAM_player_y).w, d3
 	addi.w  #48, d3
 
-	; Use d4 to determine whether a crate has been pushed
-	moveq   #0, d4
-
 	moveq   #MAX_PUSHABLE_CRATES-1, d7
 	lea     (RAM_pushable_crates).w, a0
 	lea     (RAM_pushable_crate_solids).w, a1
 .pushable_crates_loop:
-	btst.b  #2, 6(a0) ; Check if the "pushed" flag is set
-	bne.s   .next_pushable_crate ; If the flag is set, skip it
-	tst.w   (a0) ; If the X position of the crate zero?
-	beq.s   .next_pushable_crate ; If so, skip it
+	; If the X position of the crate is zero, there are no more crates to
+	; check
+	tst.w   (a0)
+	beq.s   .pushable_crates_done
+
+	; If the crate's "pushed" flag is set, skip it
+	btst.b  #2, 6(a0)
+	bne.s   .next_pushable_crate
 
 	; Check if the point overlaps the solid
 	cmp.w   (a1), d2
-	blt.s   .next_pushable_crate
+	blt.s   .pushable_crates_done ; No more crates to check
 	cmp.w   2(a1), d2
 	bgt.s   .next_pushable_crate
 	cmp.w   4(a1), d3
@@ -1877,27 +1562,254 @@ handle_player_interactions:
 	cmp.w   6(a1), d3
 	bgt.s   .next_pushable_crate
 
-	; If we got here, then the player character is pushing the crate
+	; If we got here, the player character is pushing the crate
 	subq.b  #1, (RAM_crate_push_remaining).w
 	bgt.s   .next_pushable_crate
 
 	; Finished pushing the crate
 	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
 	move.b  #6, 6(a0) ; Set crate's "pushed" and "moving" flags
-	st.b    d4
+
+	; Play crate push sound effect and stop processing further interactions
+	move.w  #SFX_CRATE, d0
+	bra     sound_play_sfx
 
 .next_pushable_crate:
 	addq.w  #8, a0
 	lea     10(a1), a1
 	dbf     d7, .pushable_crates_loop
+.pushable_crates_done:
 
-	; If a crate has been pushed, play a sound effect
-	tst.b   d4
-	beq.s   .ret
-	move.w  #SFX_CRATE, d0
+	; Use d7 to count the banana peels yet to be processed
+	moveq   #0, d7
+	move.b  (RAM_num_banana_peels).w, d7
+
+	; Skip if there are no banana peels
+	beq.s   .banana_peels_done
+
+	lea     (RAM_banana_peels).w, a2
+	subq.w  #1, d7
+.banana_peels_loop:
+	; Check overlapping bounding boxes
+	move.w  (RAM_player_x).w, d0
+	addi.w  #(PLAYER_BOX_OFFSET_X+PLAYER_BOX_WIDTH), d0
+	move.w  (a2), d1
+	addq.w  #1, d1
+	cmp.w   d1, d0 ; Peel left
+	blt.s   .next_banana_peel
+	subi.w  #PLAYER_BOX_WIDTH, d0
+	addq.w  #6, d1
+	cmp.w   d1, d0 ; Peel right
+	bgt.s   .next_banana_peel
+	move.w  (RAM_player_y).w, d0
+	add.w   (RAM_player_height).w, d0
+	move.w  2(a2), d1
+	addq.w  #2, d1
+	cmp.w   d1, d0 ; Peel top
+	blt.s   .next_banana_peel
+	sub.w   (RAM_player_height).w, d0
+	cmp.w   d1, d0 ; Peel bottom
+	bgt.s   .next_banana_peel
+
+	; Position moving peel
+	lea     (RAM_moving_peels).w, a0
+	move.w  (a2), (a0)+  ; x
+	clr.w   (a0)+
+	move.w  2(a2), (a0)+ ; y
+	clr.w   (a0)+
+
+	; Make peel inactive (by clearing its X position)
+	clr.w   (a2)
+
+	; Make peel move
+	lea     (RAM_moving_peels+8).w, a0
+	move.l  (FPSVAL_150_PXS).w,  (a0)+ ; xvel
+	move.l  (FPSVAL_M204_PXS).w, (a0)+ ; yvel
+	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
+	clr.w   (a0)+           ; xdest
+	move.w  #500, (a0)      ; ydest (below the Y limit, which is 400)
+
+	; Change player character's state
+	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
+
+	; Play slip sound effect and stop processing further interactions
+	move.w  #SFX_SLIP, d0
 	bra     sound_play_sfx
 
-.ret:
+.next_banana_peel:
+	addq.w  #4, a2
+	dbf     d7, .banana_peels_loop
+.banana_peels_done:
+
+	; Use d7 to count the gushes yet to be processed
+	moveq   #0, d7
+	move.b  (RAM_num_gushes).w, d7
+
+	; Skip if there are no gushes
+	beq     .gushes_done
+
+	lea     (RAM_gushes).w, a2
+	subq.w  #1, d7
+.gushes_loop:
+	; Check overlapping bounding boxes
+	move.w  (RAM_player_x).w, d0
+	addi.w  #(PLAYER_BOX_OFFSET_X+PLAYER_BOX_WIDTH), d0
+	move.w  (a2), d1
+	addq.w  #3, d1
+	cmp.w   d1, d0 ; Gush left
+	blt.s   .gushes_done ; No more gushes to check
+	subi.w  #PLAYER_BOX_WIDTH, d0
+	addi.w  #9, d1
+	cmp.w   d1, d0 ; Gush right
+	bgt.s   .next_gush
+	move.w  (RAM_player_y).w, d0
+	add.w   (RAM_player_height).w, d0
+	move.w  2(a2), d1
+	cmp.w   d1, d0 ; Gush top
+	blt.s   .next_gush
+	sub.w   (RAM_player_height).w, d0
+	addi.w  #24, d1
+	cmp.w   d1, d0 ; Gush bottom
+	bgt.s   .next_gush
+
+	; Change player character's state
+	move.b  #PLAYER_STATE_THROWBACK, (RAM_player_state).w
+
+	; If it is a normal gush (not a gush crack), branch
+	tst.b   14(a2)
+	beq.s   .gush_play_sfx
+
+	; Otherwise, convert it into a normal gush
+	move.w  #266, 2(a2)  ; y
+	move.l  (FPSVAL_M144_PXS).w, 6(a2) ; yvel
+	move.w  (DATA_gush_move_pattern_2+6).w, 10(a2) ; ydest
+	move.b  #1, 12(a2)   ; move_pattern_index
+	clr.b   14(a2)       ; is_crack
+
+	; Add crack particles
+	move.w  (a2), d0
+	addi.w  #6, d0
+	move.w  #276, d1
+	bsr     add_crack_particles
+
+.gush_play_sfx:
+	; Play gush hit sound effect and stop processing further interactions
+	move.w  #SFX_HIT, d0
+	bra     sound_play_sfx
+
+.next_gush:
+	lea     16(a2), a2
+	dbf     d7, .gushes_loop
+.gushes_done:
+
+	; Use d7 to count the springs yet to be processed
+	moveq   #0, d7
+	move.b  (RAM_num_springs).w, d7
+
+	; Skip if there are no springs
+	beq.s   .springs_done
+
+	; Use d6 to keep track of the spring index
+	moveq   #0, d6
+
+	movea.l (RAM_ptr_springs).w, a2
+	subq.w  #1, d7
+.springs_loop:
+	; Check overlapping bounding boxes
+	move.w  (RAM_player_x).w, d0
+	addi.w  #(PLAYER_BOX_OFFSET_X+PLAYER_BOX_WIDTH), d0
+	move.w  (a2), d1
+	cmp.w   d1, d0 ; Spring left
+	blt.s   .springs_done ; No more springs to check
+	subi.w  #PLAYER_BOX_WIDTH, d0
+	addi.w  #16, d1
+	cmp.w   d1, d0 ; Spring right
+	bgt.s   .next_spring
+	move.w  (RAM_player_y).w, d0
+	add.w   (RAM_player_height).w, d0
+	move.w  2(a2), d1
+	addq.w  #8, d1
+	cmp.w   d1, d0 ; Spring top
+	blt.s   .next_spring
+	sub.w   (RAM_player_height).w, d0
+	addq.w  #8, d1
+	cmp.w   d1, d0 ; Spring bottom
+	bgt.s   .next_spring
+
+	tst.l   (RAM_player_yvel).w
+	blt.s   .next_spring
+
+	; The player character has hit a spring
+	move.l  (FPSVAL_M246_PXS).w, (RAM_player_yvel).w
+
+	; Set hit spring index
+	move.b  d6, (RAM_hit_spring).w
+
+	lea     (RAM_anims+ANIM_HIT_SPRING).w, a0
+	move.b  #5, (a0)
+	move.b  3(a0), 2(a0) ; Set delay
+	move.b  #3, 4(a0)    ; Set "running" and "reverse" flags
+
+	; Play spring sound effect and stop processing further interactions
+	move.w  #SFX_SPRING, d0
+	bra     sound_play_sfx
+
+.next_spring:
+	addq.w  #4, a2
+	addq.b  #1, d6
+	dbf     d7, .springs_loop
+.springs_done:
+
+	; Use d6 to keep track of the rope index
+	moveq   #0, d6
+
+	; Use d7 to count the ropes yet to be processed
+	moveq   #0, d7
+	move.b  (RAM_num_ropes).w, d7
+
+	; Skip if there are no ropes
+	beq.s   .ropes_done
+
+	movea.l (RAM_ptr_ropes).w, a2
+	subq.w  #1, d7
+.ropes_loop:
+	; For ropes, check interaction using a point at offset (21, 28) from the
+	; player character
+	move.w  (RAM_player_x).w, d0
+	addi.w  #21, d0
+	move.w  (a2), d1
+	cmp.w   d1, d0 ; Rope left
+	blt.s   .ropes_done ; No more ropes to check
+	addq.w  #4, d1
+	cmp.w   d1, d0 ; Rope right
+	bgt.s   .next_rope
+	move.w  (RAM_player_y).w, d0
+	addi.w  #28, d0
+	move.w  #(ROPE_Y+5), d1
+	cmp.w   d1, d0 ; Rope top
+	blt.s   .next_rope
+	addi.w  #64, d1
+	cmp.w   d1, d0 ; Rope bottom
+	bgt.s   .next_rope
+
+	; Set grabbed rope limits
+	move.w  (a2), d0
+	move.w  d0, (RAM_grabbed_rope_xmin).w
+	addi.w  #352, d0
+	move.w  d0, (RAM_grabbed_rope_xmax).w
+
+	move.b  #PLAYER_STATE_GRABROPE, (RAM_player_state).w
+	move.b  d6, (RAM_grabbed_rope_index).w
+	move.w  (a2), (RAM_grabbed_rope_x).w
+	clr.w   (RAM_grabbed_rope_x+2).w
+	move.l  (FPSVAL_258_PXS).w, (RAM_grabbed_rope_xvel).w
+
+.next_rope:
+	addq.w  #2, a2
+	addq.b  #1, d6
+	dbf     d7, .ropes_loop
+.ropes_done:
+
 	rts
 
 ; ------------------------------------------------------------------------------

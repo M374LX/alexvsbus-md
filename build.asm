@@ -18,7 +18,6 @@
 	include 'data/cheat.asm'
 	include 'data/palettes.asm'
 	include 'data/sky-colors.asm'
-	include 'data/obj-bounding-boxes.asm'
 	include 'data/gush-move-patterns.asm'
 	include 'data/levels.asm'
 	include 'data/vehicle-types.asm'

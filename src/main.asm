@@ -384,15 +384,18 @@ start_level:
 	lea     5(a0), a1
 
 	move.b  (a1)+, (RAM_num_coins).w
-	move.b  (a1)+, (RAM_num_objs).w
+	move.b  (a1)+, (RAM_num_banana_peels).w
+	move.b  (a1)+, (RAM_num_gushes).w
 	move.b  (a1)+, (RAM_num_overhead_signs).w
 	move.b  (a1)+, (RAM_num_parked_vehicles).w
 	move.b  (a1)+, (RAM_num_respawn_points).w
+	move.b  (a1)+, (RAM_num_ropes).w
 	move.b  (a1)+, (RAM_num_solids).w
+	move.b  (a1)+, (RAM_num_springs).w
 	move.b  (a1)+, (RAM_num_triggers).w
 
 	move.l  a0, d0
-	addi.l  #12, d0
+	addi.l  #16, d0
 	move.l  d0, (RAM_ptr_level_columns).w
 
 	; Copy level coins to RAM
@@ -403,33 +406,75 @@ start_level:
 	lea     (RAM_coins).w, a0
 	moveq   #0, d7
 	move.b  (RAM_num_coins).w, d7
+	beq.s   .coins_copy_done ; Skip if there are no coins
 	subq.w  #1, d7
 .coins_copy_loop:
 	move.l  (a1)+, (a0)+
 	dbf     d7, .coins_copy_loop
+.coins_copy_done:
 
-	; Copy level objects to RAM
+	; Find location of banana peels (after coins) and copy them to RAM
 	moveq   #0, d1
 	move.b  (RAM_num_coins).w, d1
 	add.w   d1, d1 ; Four bytes per coin
 	add.w   d1, d1
 	add.l   d1, d0
 	movea.l d0, a1
-	lea     (RAM_objs).w, a0
+	lea     (RAM_banana_peels).w, a0
 	moveq   #0, d7
-	move.b  (RAM_num_objs).w, d7
+	move.b  (RAM_num_banana_peels).w, d7
+	beq.s   .banana_peels_copy_done ; Skip if there are no peels
 	subq.w  #1, d7
-.objs_copy_loop:
+.banana_peels_copy_loop:
 	move.l  (a1)+, (a0)+
-	move.l  (a1)+, (a0)+
-	dbf     d7, .objs_copy_loop
+	dbf     d7, .banana_peels_copy_loop
+.banana_peels_copy_done:
 
-	; Find location of overhead signs (after level objects)
+	; Find location of gushes (after banana peels) and copy them to RAM
 	moveq   #0, d1
-	move.b  (RAM_num_objs).w, d1
-	add.w   d1, d1 ; Eight bytes per object
+	move.b  (RAM_num_banana_peels).w, d1
+	add.w   d1, d1 ; Four bytes per banana peel
 	add.w   d1, d1
-	add.w   d1, d1
+	add.l   d1, d0
+	movea.l d0, a1
+	moveq   #0, d6
+	moveq   #0, d7
+	move.b  (RAM_num_gushes).w, d7
+	beq.s   .gushes_done ; Skip if there are no gushes
+
+	move.l  DATA_gush_move_pattern_1, d2
+	move.w  DATA_gush_move_pattern_1+6, d3
+	lea     (RAM_gushes).w, a0
+	subq.b  #1, d7
+.gushes_add_loop:
+	move.w  (a1)+, d4
+
+	; Add gush
+	move.w  d4, (a0)     ; x
+	bclr.b  #7, (a0)     ; Clear gush crack bit
+	addq.w  #2, a0
+	move.w  #232, (a0)+  ; y
+	clr.w   (a0)+
+	move.l  d2, (a0)+    ; yvel
+	move.w  d3, (a0)+    ; ydest
+	addq.w  #4, a0       ; Skip four already cleared bytes
+
+	; Skip if it is not a gush crack
+	btst.l  #$F, d4
+	beq.s   .gushes_next
+
+	; Otherwise, mark it as a gush crack
+	move.w  #260, -14(a0) ; y
+	st.b    -2(a0)        ; is_crack
+
+.gushes_next:
+	dbf     d7, .gushes_add_loop
+.gushes_done:
+
+	; Find location of overhead signs (after gushes)
+	moveq   #0, d1
+	move.b  (RAM_num_gushes).w, d1
+	add.w   d1, d1 ; Two bytes per gush
 	add.l   d1, d0
 	move.l  d0, (RAM_ptr_overhead_signs).w
 
@@ -450,18 +495,25 @@ start_level:
 	move.l  d0, (RAM_ptr_passageways).w
 
 	; Find location of respawn points (after passageways)
-	addi.w  #(4*4), d0 ; Four fixed passageway entries with four bytes each
+	addi.w  #(MAX_PASSAGEWAYS*8), d0 ; Eight bytes per passageway
 	move.l  d0, (RAM_ptr_respawn_points).w
 
-	; Find location of level solids (after respawn points)
+	; Find location of ropes (after respawn points)
 	moveq   #0, d1
 	move.b  (RAM_num_respawn_points).w, d1
 	add.w   d1, d1 ; Four bytes per respawn point
 	add.w   d1, d1
 	add.l   d1, d0
+	move.l  d0, (RAM_ptr_ropes).w
+
+	; Find location of level solids (after ropes)
+	moveq   #0, d1
+	move.b  (RAM_num_ropes).w, d1
+	add.w   d1, d1 ; Two bytes per rope
+	add.l   d1, d0
 	move.l  d0, (RAM_ptr_level_solids).w
 
-	; Find location of triggers (after level solids)
+	; Find location of springs (after level solids)
 	moveq   #0, d1
 	move.b  (RAM_num_solids).w, d1
 	move.w  d1, d2 ; Ten bytes per solid
@@ -470,67 +522,38 @@ start_level:
 	add.w   d1, d1
 	add.w   d2, d2
 	add.w   d2, d1
-	add.w   d1, d0
+	add.l   d1, d0
+	move.l  d0, (RAM_ptr_springs).w
+
+	; Find location of triggers (after springs)
+	moveq   #0, d1
+	move.b  (RAM_num_springs).w, d1
+	add.w   d1, d1 ; Four bytes per spring
+	add.w   d1, d1
+	add.l   d1, d0
 	move.l  d0, (RAM_ptr_next_trigger).w
 
-	; Add gushes
-	move.l  DATA_gush_move_pattern_1, d0
-	move.w  DATA_gush_move_pattern_1+6, d1
-	lea     (RAM_objs).w, a0
-	lea     (RAM_gushes).w, a1
-	moveq   #0, d6 ; Use d6 for index of current object
-	moveq   #0, d7
-	move.b  (RAM_num_objs).w, d7
-	subq.b  #1, d7
-.gushes_add_loop:
-	cmpi.w  #OBJ_GUSH, (a0)
-	bne.s   .gushes_next_obj
-
-	move.w  #232, (a1)+
-	clr.w   (a1)+
-	move.l  d0,   (a1)+
-	move.w  d1, (a1)+
-
-	clr.b   (a1)+ ; Use first pattern
-	clr.b   (a1)+
-	move.b  d6, (a1)+
-	addq.w  #3, a1
-
-	addi.b  #1, (RAM_num_gushes).w
-
-.gushes_next_obj:
-	addq.b  #1, d6
-	addq.w  #8, a0
-	dbf     d7, .gushes_add_loop
-
 	; Add pushable crates
-	lea     (RAM_objs).w, a0
+	movea.l (RAM_ptr_passageways).w, a0
 	lea     (RAM_pushable_crates).w, a1
 	lea     (RAM_pushable_crate_solids).w, a2
-	moveq   #0, d6 ; Use d6 for index of current object
-	moveq   #0, d7
-	move.b  (RAM_num_objs).w, d7
-	subq.b  #1, d7
-
+	moveq   #0, d6 ; Use d6 for the X position of the column
+	moveq   #(MAX_PASSAGEWAYS-1), d7
 .pushable_crates_add_loop:
-	cmpi.w  #OBJ_PUSH_CRATE, (a0)
-	beq.s   .is_pushable_crate
-	cmpi.w  #OBJ_PUSH_CRATE_WITH_ARROW, (a0)
-	beq.s   .is_pushable_crate
-	bra.s   .pushable_crates_next_obj
+	move.w  (a0), d0
 
-.is_pushable_crate:
-	move.w  2(a0), d0
+	; Skip if there are no more passageways
+	beq.s   .pushable_crates_done
 
+	; Add pushable crate
 	move.w  d0, (a1)+
 	clr.w   (a1)+
 	addi.w  #24, d0
 	move.w  d0, (a1)+
-	clr.b   (a1)+
-	move.b  d6, (a1)+
+	addq.w  #2, a1
 
 	; Add pushable crate solid
-	move.w  2(a0), d0
+	subi.w  #24, d0
 	move.w  d0, (a2)+
 	addi.w  #24, d0
 	move.w  d0, (a2)+
@@ -539,15 +562,15 @@ start_level:
 	move.w  #0, (a2)+
 
 	; Determine if an arrow is shown with the crate
-	cmpi.w  #OBJ_PUSH_CRATE_WITH_ARROW, (a0)
-	bne.s   .pushable_crates_next_obj
+	tst.w   4(a0)
+	beq.s   .pushable_crates_next_obj
 
 	move.b  #1, -2(a1) ; Set "show arrow" flag
 
 .pushable_crates_next_obj:
-	addq.b  #1, d6
-	lea     8(a0), a0
+	addq.w  #8, a0
 	dbf     d7, .pushable_crates_add_loop
+.pushable_crates_done:
 
 	clr.b   (RAM_progress_checked).w
 	move.b  #SCR_PLAY, (RAM_screen_type_next).w
@@ -601,7 +624,7 @@ check_game_progress:
 
 	move.b  #1, (RAM_progress_checked).w
 
-	tst.b   (RAM_progress_cheat).w
+	tst.b   (RAM_progress_cheat_enabled).w
 	bne.s   .ret
 
 	; No progress advance if it is the last level of the highest difficulty

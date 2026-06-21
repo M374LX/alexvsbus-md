@@ -29,22 +29,21 @@
 //Maximum numbers
 #define MAX_COLUMNS 480
 #define MAX_COINS 128
-#define MAX_OBJS 64
+#define MAX_BANANA_PEELS 48
+#define MAX_GUSHES 32
 #define MAX_OVERHEAD_SIGNS 8
-#define MAX_PARKED_VEHICLES 64
+#define MAX_PARKED_VEHICLES 8
 #define MAX_PASSAGEWAYS 4
 #define MAX_RESPAWN_POINTS 32
-#define MAX_TRIGGERS 8
+#define MAX_ROPES 4
 #define MAX_SOLIDS 96
+#define MAX_SPRINGS 16
+#define MAX_TRIGGERS 8
 
 //Objects with a fixed Y position
-#define GUSH_CRACK_Y 260
-#define GUSH_INITIAL_Y 232
 #define HYDRANT_Y 240
 #define PARKED_CAR_Y 208
 #define PARKED_TRUCK_Y 136
-#define ROPE_Y 144
-#define PUSHABLE_CRATE_Y 240
 
 //Level column types
 enum {
@@ -55,18 +54,6 @@ enum {
 	LVLCOL_PASSAGEWAY_LEFT = 4,
 	LVLCOL_PASSAGEWAY_MIDDLE = 5,
 	LVLCOL_PASSAGEWAY_RIGHT = 6,
-};
-
-//Object types
-enum {
-	OBJ_NULL = 0,
-	OBJ_BANANA_PEEL = 1,
-	OBJ_GUSH = 2,
-	OBJ_GUSH_CRACK = 3,
-	OBJ_PUSH_CRATE = 4,
-	OBJ_PUSH_CRATE_WITH_ARROW = 5,
-	OBJ_ROPE = 6,
-	OBJ_SPRING = 7,
 };
 
 //Parked vehicle types
@@ -104,15 +91,16 @@ static uint16_t num_columns;
 static uint8_t  sky_color;
 static uint8_t  bgm;
 static uint8_t  goal_scene;
-static uint8_t  num_objs;
 static uint8_t  num_coins;
+static uint8_t  num_banana_peels;
 static uint8_t  num_gushes;
-static uint8_t  num_gush_cracks;
 static uint8_t  num_overhead_signs;
 static uint8_t  num_parked_vehicles;
 static uint8_t  num_passageways;
 static uint8_t  num_respawn_points;
+static uint8_t  num_ropes;
 static uint8_t  num_solids;
+static uint8_t  num_springs;
 static uint8_t  num_triggers;
 
 static struct {
@@ -123,16 +111,20 @@ static struct {
 } columns[MAX_COLUMNS];
 
 static struct {
-	bool     gold;
 	uint16_t x;
 	uint16_t y;
+	bool     gold;
 } coins[MAX_COINS];
 
 static struct {
-	uint16_t type;
 	uint16_t x;
 	uint16_t y;
-} objs[MAX_OBJS];
+} banana_peels[MAX_BANANA_PEELS];
+
+static struct {
+	uint16_t x;
+	bool     is_crack;
+} gushes[MAX_GUSHES];
 
 static struct {
 	uint16_t x;
@@ -147,6 +139,7 @@ static struct {
 static struct {
 	uint16_t left;
 	uint16_t right;
+	bool     has_arrow;
 } passageways[MAX_PASSAGEWAYS];
 
 static struct {
@@ -155,12 +148,21 @@ static struct {
 } respawn_points[MAX_RESPAWN_POINTS];
 
 static struct {
+	uint16_t x;
+} ropes[MAX_ROPES];
+
+static struct {
 	uint16_t type;
 	uint16_t left;
 	uint16_t right;
 	uint16_t top;
 	uint16_t bottom;
 } solids[MAX_SOLIDS];
+
+static struct {
+	uint16_t x;
+	uint16_t y;
+} springs[MAX_SPRINGS];
 
 static struct {
 	uint16_t x;
@@ -207,17 +209,40 @@ static void add_coin(bool gold, int x, int y)
 	num_coins++;
 }
 
-static void add_obj(int type, int x, int y)
+static void add_banana_peel(int x, int y)
 {
-	if (num_objs >= MAX_OBJS) {
+	if (num_banana_peels >= MAX_BANANA_PEELS) {
 		return;
 	}
 
-	objs[num_objs].type = type;
-	objs[num_objs].x = x;
-	objs[num_objs].y = y;
+	banana_peels[num_banana_peels].x = x;
+	banana_peels[num_banana_peels].y = y;
 
-	num_objs++;
+	num_banana_peels++;
+}
+
+static void add_gush(int x)
+{
+	if (num_gushes >= MAX_GUSHES) {
+		return;
+	}
+
+	gushes[num_gushes].x = x;
+	gushes[num_gushes].is_crack = false;
+
+	num_gushes++;
+}
+
+static void add_gush_crack(int x)
+{
+	if (num_gushes >= MAX_GUSHES) {
+		return;
+	}
+
+	gushes[num_gushes].x = x;
+	gushes[num_gushes].is_crack = true;
+
+	num_gushes++;
 }
 
 static void add_parked_vehicle(int type, int x)
@@ -244,7 +269,7 @@ static void add_deep_hole(int x, int w)
 	columns[x + w - 1].type = LVLCOL_DEEP_HOLE_RIGHT;
 }
 
-static void add_passageway(int x, int w)
+static void add_passageway(int x, int w, bool has_arrow)
 {
 	int i;
 
@@ -261,6 +286,7 @@ static void add_passageway(int x, int w)
 
 	passageways[num_passageways].left  = x * 24;
 	passageways[num_passageways].right = (x + w) * 24;
+	passageways[num_passageways].has_arrow = has_arrow;
 	num_passageways++;
 }
 
@@ -305,10 +331,56 @@ static void add_respawn_point(int x, int y)
 		return;
 	}
 
-	respawn_points[num_respawn_points].x = (x * 24) + 3;
-	respawn_points[num_respawn_points].y = (y * 24) - 12;
+	respawn_points[num_respawn_points].x = x;
+	respawn_points[num_respawn_points].y = y;
 
 	num_respawn_points++;
+}
+
+static void add_rope(int x)
+{
+	if (num_ropes > MAX_ROPES) {
+		return;
+	}
+
+	ropes[num_ropes].x = x;
+
+	num_ropes++;
+}
+
+static void add_spring(int x, int y)
+{
+	int ins_pos = num_springs;
+
+	if (num_springs >= MAX_SPRINGS) {
+		return;
+	}
+
+	//Sort springs by X position
+	if (num_springs > 0) {
+		int i;
+
+		for (i = num_springs - 1; i >= 0; i--) {
+			if (springs[i].x < x) {
+				ins_pos = i + 1;
+				break;
+			}
+		}
+
+		if (springs[0].x > x) {
+			ins_pos = 0;
+		}
+
+		for (i = num_springs; i > ins_pos; i--) {
+			springs[i].x = springs[i - 1].x;
+			springs[i].y = springs[i - 1].y;
+		}
+	}
+
+	springs[ins_pos].x = x;
+	springs[ins_pos].y = y;
+
+	num_springs++;
 }
 
 static void add_trigger(int x, int what)
@@ -336,45 +408,19 @@ static void convert_obj_pos()
 		coins[i].y *= 24;
 	}
 
-	for (i = 0; i < num_objs; i++) {
-		int x = objs[i].x * 24;
-		int y = objs[i].y * 24;
+	for (i = 0; i < num_banana_peels; i++) {
+		int x = banana_peels[i].x;
+		int y = banana_peels[i].y;
 
-		switch (objs[i].type) {
-			case OBJ_BANANA_PEEL:
-				x += 16;
-				y += 16;
-				break;
-
-			case OBJ_GUSH:
-				y = GUSH_INITIAL_Y;
-				break;
-
-			case OBJ_GUSH_CRACK:
-				y = GUSH_CRACK_Y;
-				break;
-
-			case OBJ_PUSH_CRATE:
-			case OBJ_PUSH_CRATE_WITH_ARROW:
-				y = PUSHABLE_CRATE_Y;
-				break;
-
-			case OBJ_ROPE:
-				x += 32;
-				y = ROPE_Y + 5;
-				break;
-
-			case OBJ_SPRING:
-				x += 8;
-				y += 8;
-				break;
-		}
-
-		objs[i].x = x;
-		objs[i].y = y;
+		banana_peels[i].x = (x * 24) + 16;
+		banana_peels[i].y = (y * 24) + 16;
 	}
 
-	for (i = 0; i < MAX_OVERHEAD_SIGNS; i++) {
+	for (i = 0; i < num_gushes; i++) {
+		gushes[i].x *= 24;
+	}
+
+	for (i = 0; i < num_overhead_signs; i++) {
 		int x = overhead_signs[i].x;
 		int y = overhead_signs[i].y;
 
@@ -383,9 +429,30 @@ static void convert_obj_pos()
 	}
 
 	for (i = 0; i < num_parked_vehicles; i++) {
-		//Convert the X position of each vehicle from level blocks to
-		//tiles
+		//Convert the X position of each vehicle from level blocks to tiles
 		parked_vehicles[i].x *= 3;
+	}
+
+	for (i = 0; i < num_respawn_points; i++) {
+		int x = respawn_points[i].x;
+		int y = respawn_points[i].y;
+
+		respawn_points[i].x = (x * 24) + 3;
+		respawn_points[i].y = (y * 24) - 12;
+	}
+
+	for (i = 0; i < MAX_ROPES; i++) {
+		int x = ropes[i].x;
+
+		ropes[i].x = (x * 24) + 32;
+	}
+
+	for (i = 0; i < num_springs; i++) {
+		int x = springs[i].x;
+		int y = springs[i].y;
+
+		springs[i].x = (x * 24) + 8;
+		springs[i].y = (y * 24) + 8;
 	}
 }
 
@@ -441,7 +508,7 @@ static void add_solids()
 	}
 
 	//Add passageway solids
-	for (i = 0; i < num_passageways; i++) {
+	for (i = 0; i < MAX_PASSAGEWAYS; i++) {
 		int x = passageways[i].left;
 		int w = passageways[i].right - x;
 
@@ -538,13 +605,14 @@ static bool read_file(FILE* fp)
 	sky_color = -1;
 	bgm = -1;
 	num_columns = 0;
-	num_objs = 0;
 	num_coins = 0;
+	num_banana_peels = 0;
 	num_gushes = 0;
-	num_gush_cracks = 0;
 	num_overhead_signs = 0;
 	num_parked_vehicles = 0;
 	num_respawn_points = 0;
+	num_ropes = 0;
+	num_springs = 0;
 	num_triggers = 0;
 	num_solids = 0;
 
@@ -585,7 +653,7 @@ static bool read_file(FILE* fp)
 			goal_scene = tokens[0] - 1;
 		} else if (str_starts_with(buffer, "banana-peel ")) {
 			x_next += tokens[0];
-			add_obj(OBJ_BANANA_PEEL, x_next, tokens[1]);
+			add_banana_peel(x_next, tokens[1]);
 		} else if (str_starts_with(buffer, "car-blue ")) {
 			x_next += tokens[0];
 			add_parked_vehicle(PARKED_CAR_BLUE, x_next);
@@ -606,12 +674,10 @@ static bool read_file(FILE* fp)
 			add_crates(x_next, tokens[1], tokens[2]);
 		} else if (str_starts_with(buffer, "gush ")) {
 			x_next += tokens[0];
-			add_obj(OBJ_GUSH, x_next, 0);
-			num_gushes++;
+			add_gush(x_next);
 		} else if (str_starts_with(buffer, "gush-crack ")) {
 			x_next += tokens[0];
-			add_obj(OBJ_GUSH_CRACK, x_next, 0);
-			num_gush_cracks++;
+			add_gush_crack(x_next);
 		} else if (str_starts_with(buffer, "hydrant ")) {
 			x_next += tokens[0];
 			add_hydrant(x_next);
@@ -621,10 +687,10 @@ static bool read_file(FILE* fp)
 		} else if (str_starts_with(buffer, "rope ")) {
 			x_next += tokens[0];
 			add_horizontal_rope(x_next);
-			add_obj(OBJ_ROPE, x_next, tokens[1]);
+			add_rope(x_next);
 		} else if (str_starts_with(buffer, "spring ")) {
 			x_next += tokens[0];
-			add_obj(OBJ_SPRING, x_next, 10);
+			add_spring(x_next, 10);
 		} else if (str_starts_with(buffer, "truck ")) {
 			x_next += tokens[0];
 			add_parked_vehicle(PARKED_TRUCK, x_next);
@@ -648,14 +714,12 @@ static bool read_file(FILE* fp)
 			add_deep_hole(x_next, tokens[1]);
 		} else if (str_starts_with(buffer, "passageway ")) {
 			x_next += tokens[0];
-			add_passageway(x_next, tokens[1]);
-			add_obj(OBJ_PUSH_CRATE, x_next, 0);
-			add_obj(OBJ_SPRING, x_next + tokens[1] - 1, 14);
+			add_passageway(x_next, tokens[1], false);
+			add_spring(x_next + tokens[1] - 1, 14);
 		} else if (str_starts_with(buffer, "passageway-arrow ")) {
 			x_next += tokens[0];
-			add_passageway(x_next, tokens[1]);
-			add_obj(OBJ_PUSH_CRATE_WITH_ARROW, x_next, 0);
-			add_obj(OBJ_SPRING, x_next + tokens[1] - 1, 14);
+			add_passageway(x_next, tokens[1], true);
+			add_spring(x_next + tokens[1] - 1, 14);
 		} else {
 			return false;
 		}
@@ -700,12 +764,16 @@ static void output_data(FILE* fp)
 	out8(fp, bgm);
 	out8(fp, goal_scene);
 	out8(fp, num_coins);
-	out8(fp, num_objs);
+	out8(fp, num_banana_peels);
+	out8(fp, num_gushes);
 	out8(fp, num_overhead_signs);
 	out8(fp, num_parked_vehicles);
 	out8(fp, num_respawn_points);
+	out8(fp, num_ropes);
 	out8(fp, num_solids);
+	out8(fp, num_springs);
 	out8(fp, num_triggers);
+	out8(fp, 0); //Padding
 
 	for (i = 0; i < num_columns; i++) {
 		out8(fp, encode_column(i));
@@ -716,11 +784,13 @@ static void output_data(FILE* fp)
 		out16be(fp, coins[i].y | (coins[i].gold ? 0x8000 : 0));
 	}
 
-	for (i = 0; i < num_objs; i++) {
-		out16be(fp, objs[i].type);
-		out16be(fp, objs[i].x);
-		out16be(fp, objs[i].y);
-		out16be(fp, 0);
+	for (i = 0; i < num_banana_peels; i++) {
+		out16be(fp, banana_peels[i].x);
+		out16be(fp, banana_peels[i].y);
+	}
+
+	for (i = 0; i < num_gushes; i++) {
+		out16be(fp, gushes[i].x | (gushes[i].is_crack ? 0x8000 : 0));
 	}
 
 	for (i = 0; i < num_overhead_signs; i++) {
@@ -736,11 +806,17 @@ static void output_data(FILE* fp)
 	for (i = 0; i < MAX_PASSAGEWAYS; i++) {
 		out16be(fp, passageways[i].left);
 		out16be(fp, passageways[i].right);
+		out16be(fp, passageways[i].has_arrow ? 1 : 0);
+		out16be(fp, 0);
 	}
 
 	for (i = 0; i < num_respawn_points; i++) {
 		out16be(fp, respawn_points[i].x);
 		out16be(fp, respawn_points[i].y);
+	}
+
+	for (i = 0; i < num_ropes; i++) {
+		out16be(fp, ropes[i].x);
 	}
 
 	for (i = 0; i < num_solids; i++) {
@@ -749,6 +825,11 @@ static void output_data(FILE* fp)
 		out16be(fp, solids[i].top);
 		out16be(fp, solids[i].bottom);
 		out16be(fp, solids[i].type);
+	}
+
+	for (i = 0; i < num_springs; i++) {
+		out16be(fp, springs[i].x);
+		out16be(fp, springs[i].y);
 	}
 
 	for (i = 0; i < num_triggers; i++) {
@@ -760,11 +841,18 @@ static void output_data(FILE* fp)
 void output_stats()
 {
 	printf("Level columns: %d\n", num_columns);
-	printf("Objects in RAM_objs: %d\n", num_objs);
+	printf("Level size in pixels: %d\n", num_columns * LEVEL_BLOCK_SIZE);
 	printf("Coins: %d\n", num_coins);
+	printf("Banana peels: %d\n", num_banana_peels);
 	printf("Gushes: %d\n", num_gushes);
-	printf("Gushes plus gush cracks: %d\n", num_gushes + num_gush_cracks);
+	printf("Overhead signs: %d\n", num_overhead_signs);
 	printf("Parked vehicles: %d\n", num_parked_vehicles);
+	printf("Passageways: %d\n", num_passageways);
+	printf("Respawn points: %d\n", num_respawn_points);
+	printf("Ropes: %d\n", num_ropes);
+	printf("Solids: %d\n", num_solids);
+	printf("Springs: %d\n", num_springs);
+	printf("Triggers: %d\n", num_triggers);
 }
 
 void print_usage(char* argv[])
