@@ -41,36 +41,31 @@ int_hblank:
 	movem.l d0-d1/a0, -(sp)
 
 	lea     VDP_CTRL, a0
+	moveq   #0, d0
 	move.b  4(a0), d0
 
 	; If we are not in active display, skip
 	cmpi.b  #SCREEN_H, d0
 	bhs.s   .ret
 
-	move.b   (RAM_wipe_value).w, d1
+	move.w   (RAM_wipe_value).w, d1
 	beq.s   .ret
-	cmpi.b  #(SCREEN_H/(8*2)), d1
+	subq.w  #1, d1
+	cmpi.w  #(SCREEN_H/2)-1, d1
 	bhs.s   .ret
 
-	add.b   d1, d1
-	add.b   d1, d1
-	add.b   d1, d1
-	subq.b  #1, d1
-
-	cmp.b   d0, d1
+	cmp.w   d0, d1
 	beq.s   .wipe_top
 
-	move.b  #(SCREEN_H/8), d1
-	sub.b   (RAM_wipe_value).w, d1
+	move.w   #(SCREEN_H-1), d1
+	sub.w    (RAM_wipe_value).w, d1
 
-	add.b   d1, d1
-	add.b   d1, d1
-	add.b   d1, d1
-	subq.b  #1, d1
-
-	cmp.b   d0, d1
+	cmp.w   d0, d1
 	beq.s   .wipe_bottom
-	bra.s   .ret
+
+.ret:
+	movem.l (sp)+, d0-d1/a0
+	rte
 
 .wipe_top:
 	move.w  #$8164, (a0)
@@ -78,10 +73,7 @@ int_hblank:
 
 .wipe_bottom:
 	move.w  #$8124, (a0)
-
-.ret:
-	movem.l (sp)+, d0-d1/a0
-	rte
+	bra.s   .ret
 
 ; ------------------------------------------------------------------------------
 

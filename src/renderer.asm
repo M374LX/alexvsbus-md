@@ -39,7 +39,7 @@ renderer_init:
 	addq.w  #4, a0       ; Point a0 to VDP control port
 	move.w  #$8014, (a0) ; Enable HBL interrupt
 	move.w  #$8124, (a0) ; Disable display and enable VBL interrupt
-	move.w  #$8A07, (a0) ; Set HBL interrupt rate
+	move.w  #$8A00|(WIPE_DELTA-1), (a0) ; Set HBL interrupt rate
 
 	rts
 
@@ -159,7 +159,7 @@ flush_sprites:
 ; ------------------------------------------------------------------------------
 
 renderer_handle_wipe:
-	tst.b   (RAM_wipe_delta).w
+	tst.w   (RAM_wipe_delta).w
 	beq.s   .do_wipe_cmd
 
 	tst.b   (RAM_wipe_delay).w
@@ -169,20 +169,19 @@ renderer_handle_wipe:
 	bra.s   .do_wipe_cmd
 
 .no_delay:
-	cmpi.b  #(SCREEN_H/(8*2)), (RAM_wipe_value).w
+	cmpi.w  #(SCREEN_H/2), (RAM_wipe_value).w
 	bhi.s   .do_wipe_cmd
 
 	; Start wipe delay
 	move.b  #1, (RAM_wipe_delay).w
 
 	; Update wipe value
-	move.b  (RAM_wipe_delta).w, d0
-	add.b   d0, (RAM_wipe_value).w
+	move.w  (RAM_wipe_delta).w, d0
+	add.w   d0, (RAM_wipe_value).w
 
 	; Prevent wipe value from going negative
-	tst.b   (RAM_wipe_value).w
 	bge.s   .do_wipe_cmd
-	clr.b   (RAM_wipe_value).w
+	clr.w   (RAM_wipe_value).w
 
 .do_wipe_cmd:
 	move.b  (RAM_wipe_cmd).w, d0
@@ -195,33 +194,33 @@ renderer_handle_wipe:
 	beq.s   .wipe_cmd_clear ; WIPECMD_CLEAR
 
 .wipe_cmd_in:
-	move.b  #(SCREEN_H/(8*2)), (RAM_wipe_value).w
-	move.b  #-1, (RAM_wipe_delta).w
+	move.w  #(SCREEN_H/2), (RAM_wipe_value).w
+	move.w  #-WIPE_DELTA, (RAM_wipe_delta).w
 	move.b  #1, (RAM_wipe_delay).w
 	bra.s   .wipe_cmd_done
 
 .wipe_cmd_out:
-	move.b  #1, (RAM_wipe_value).w
-	move.b  #1, (RAM_wipe_delta).w
+	move.w  #WIPE_DELTA, (RAM_wipe_value).w
+	move.w  #WIPE_DELTA, (RAM_wipe_delta).w
 	move.b  #1, (RAM_wipe_delay).w
 	bra.s   .wipe_cmd_done
 
 .wipe_cmd_clear:
-	clr.b   (RAM_wipe_value).w
-	clr.b   (RAM_wipe_delta).w
+	clr.w   (RAM_wipe_value).w
+	clr.w   (RAM_wipe_delta).w
 	clr.b   (RAM_wipe_delay).w
 
 .wipe_cmd_done:
 	clr.b   (RAM_wipe_cmd).w
 
-	tst.b   (RAM_wipe_value).w
+	tst.w   (RAM_wipe_value).w
 	beq.s   .dont_enable_wipe
 	st.b    (RAM_wipe_enabled).w
 .dont_enable_wipe:
 
 	; Handle initial screen blanking
 	move.w  #$8164, d0 ; Enable display and VBlank
-	tst.b   (RAM_wipe_value).w
+	tst.w   (RAM_wipe_value).w
 	beq.s   .no_blanking
 	bclr.l  #6, d0 ; Disable display
 .no_blanking:

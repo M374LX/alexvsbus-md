@@ -47,6 +47,9 @@ WIPECMD_IN:                     equ 1
 WIPECMD_OUT:                    equ 2
 WIPECMD_CLEAR:                  equ 3
 
+; Number of lines that go blank per step during a screen wipe
+WIPE_DELTA:                     equ 8
+
 ; Sound effects
 SFX_COIN:                       equ $00
 SFX_CRATE:                      equ $01

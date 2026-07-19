@@ -55,9 +55,9 @@ RAM_progress_cheat_pos:         equ $FFFF801E
 RAM_wipe_enabled:               equ $FFFF8020
 
 RAM_wipe_cmd:                   equ $FFFF8021
-RAM_wipe_value:                 equ $FFFF8022
-RAM_wipe_delta:                 equ $FFFF8023
-RAM_wipe_delay:                 equ $FFFF8024
+RAM_wipe_delta:                 equ $FFFF8022
+RAM_wipe_value:                 equ $FFFF8024
+RAM_wipe_delay:                 equ $FFFF8026
 
 RAM_menu_type:                  equ $FFFF8030
 RAM_menu_type_prev:             equ $FFFF8031
