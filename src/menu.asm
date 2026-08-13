@@ -28,6 +28,7 @@
 
 menu_update:
 	move.b  (RAM_menu_flags).w, (RAM_menu_flags_prev).w
+	bclr.b  #2, (RAM_menu_flags).w ; Clear "item changed" flag
 	clr.b   (RAM_menu_action).w
 
 	; Check if a level has been selected
@@ -102,13 +103,30 @@ menu_update:
 	bne     menu_close
 
 	; Confirm selection by pressing Start/A/C
-	andi.b  #$E0, d7
+	move.b  d7, d1
+	andi.b  #$E0, d1
 	bne.s   menu_confirm
 
-	; Play a sound effect if the selected item changed
+	; Check if it is the settings menu and one of the sound toggle items
+	; (the first two) is selected
+	cmpi.b  #MENU_SETTINGS, (RAM_menu_type).w
+	bne.s   .check_selection_change
+	cmpi.b  #2, d0
+	bhs.s   .check_selection_change
+
+	; If so, the setting can be toggled with D-pad left/right
+	move.b  d7, d1
+	andi.b  #$C, d1
+	bne.s   menu_confirm
+
+.check_selection_change:
+	; Check if the selected item has changed
 	cmp.b   (RAM_menu_selected_item_prev).w, d0
 	beq.s   .ret
-	move.w  #SFX_SELECT, d0
+
+	; If so, set the "item changed" flag and play a sound effect
+	bset.b  #2, (RAM_menu_flags).w
+	moveq   #SFX_SELECT, d0
 	bra     sound_play_sfx
 
 .ret:
@@ -119,11 +137,7 @@ menu_update:
 menu_confirm:
 	moveq   #0, d0
 	move.b  (RAM_menu_type).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #5, d0
 
 	moveq   #0, d1
 	move.b  (RAM_menu_selected_item).w, d1
@@ -136,8 +150,8 @@ menu_confirm:
 	; Main
 	bra.w   .main_item_play
 	bra.w   .main_item_jukebox
+	bra.w   .main_item_settings
 	bra.w   .main_item_about
-	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
@@ -189,6 +203,16 @@ menu_confirm:
 	bra.w   .jukebox_item_3
 	bra.w   .jukebox_item_4
 	bra.w   menu_close
+	bra.w   .ret
+	bra.w   .ret
+	bra.w   .ret
+
+	; Settings
+	bra.w   .settings_item_music
+	bra.w   .settings_item_sfx
+	bra.w   menu_close
+	bra.w   .ret
+	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
@@ -252,6 +276,10 @@ menu_confirm:
 
 .main_item_jukebox:
 	moveq   #MENU_JUKEBOX, d0
+	bra     menu_open
+
+.main_item_settings:
+	moveq   #MENU_SETTINGS, d0
 	bra     menu_open
 
 .main_item_about:
@@ -327,6 +355,16 @@ menu_confirm:
 .jukebox_selected:
 	bsr     sound_play_bgm
 	bra     handle_cheat
+
+.settings_item_music:
+	bset.b  #2, (RAM_menu_flags).w  ; Set "item changed" flag
+	not.b   (RAM_bgm_off).w
+	bra     sound_toggle_bgm
+
+.settings_item_sfx:
+	bset.b  #2, (RAM_menu_flags).w  ; Set "item changed" flag
+	not.b   (RAM_sfx_off).w
+	bra     sound_toggle_sfx
 
 .restart_item_restart:
 	move.b  #MENUACT_TRY_AGAIN, (RAM_menu_action).w

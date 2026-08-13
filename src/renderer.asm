@@ -352,9 +352,9 @@ scr_draw_menu:
 	cmp.b   (RAM_menu_type_prev).w, d0
 	bne.s   draw_new_menu
 
-	; If only the selected menu item has changed, redraw only the menu items
-	move.b  (RAM_menu_selected_item).w, d0
-	cmp.b   (RAM_menu_selected_item_prev).w, d0
+	; If only the selected menu item or an on/off value has changed, redraw
+	; only the menu items
+	btst.b  #2, (RAM_menu_flags).w
 	bne     draw_menu_items
 	rts
 
@@ -545,7 +545,6 @@ draw_menu:
 .text_next_line:
 	addi.w  #$0080, d2
 	bra.s   .text_lines_loop
-
 .text_end:
 
 	; Fallthrough
@@ -575,7 +574,78 @@ draw_menu_items:
 	addq.b  #1, d5
 	dbf     d6, .items_loop
 
+	bsr.s   draw_menu_selected_item
+
 	; Fallthrough
+
+; ------------------------------------------------------------------------------
+
+; Draws the on/off values of the settings menu
+; a0 = VDP_DATA
+draw_menu_values:
+	move.b  (RAM_menu_type), d0
+	cmpi.b  #MENU_SETTINGS, d0
+	beq.s   .check_music
+	rts
+
+.check_music:
+	move.l  #$45B00003, 4(a0)
+
+	; Set palette (green if "music" is selected or white otherwise)
+	moveq   #0, d0
+	tst.b   (RAM_menu_selected_item).w
+	bne.s   .music_not_selected
+	move.w  #$2000, d0
+
+.music_not_selected:
+	tst.b   (RAM_bgm_off).w
+	bne.s   .music_off
+
+	; Music on
+	move.b  #'O', d0
+	move.w  d0, (a0)
+	move.b  #'N', d0
+	move.w  d0, (a0)
+	bra.s   .check_sfx
+
+.music_off:
+	; Music off
+	move.b  #'O', d0
+	move.w  d0, (a0)
+	move.b  #'F', d0
+	move.w  d0, (a0)
+	move.w  d0, (a0)
+
+.check_sfx:
+	move.l  #$46B00003, 4(a0)
+
+	; Set palette (green if "SFX" is selected or white otherwise)
+	moveq   #0, d0
+	cmpi.b  #1, (RAM_menu_selected_item).w
+	bne.s   .sfx_not_selected
+	move.w  #$2000, d0
+
+.sfx_not_selected:
+	tst.b   (RAM_sfx_off).w
+	bne.s   .sfx_off
+
+	; SFX on
+	move.b  #'O', d0
+	move.w  d0, (a0)
+	move.b  #'N', d0
+	move.w  d0, (a0)
+	bra.s   .ret
+
+.sfx_off:
+	; SFX off
+	move.b  #'O', d0
+	move.w  d0, (a0)
+	move.b  #'F', d0
+	move.w  d0, (a0)
+	move.w  d0, (a0)
+
+.ret:
+	rts
 
 ; ------------------------------------------------------------------------------
 

@@ -72,12 +72,17 @@ RAM_menu_stack_size:            equ $FFFF8038
 ; The flags are:
 ; 0 - Level selected
 ; 1 - Selected level menu item hidden
+; 2 - Item or on/off value changed
 RAM_menu_flags:                 equ $FFFF8039
 RAM_menu_flags_prev:            equ $FFFF803A
 
 ; 8 entries; two bytes per entry; the first byte is the menu type and the
 ; second byte is the selected item
 RAM_menu_stack:                 equ $FFFF8040
+
+; Sound settings ($00 = enabled; $FF = disabled)
+RAM_bgm_off:                    equ $FFFF8060
+RAM_sfx_off:                    equ $FFFF8061
 
 ; Number to string conversion buffer (8 bytes)
 RAM_num_str_buffer:             equ $FFFF8080

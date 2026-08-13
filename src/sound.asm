@@ -37,6 +37,16 @@ SOUNDRAM_flags:                 equ RAM_sound+$00
 ; One bit for each channel
 SOUNDRAM_locked_channels:       equ RAM_sound+$02
 
+; The id (BGM_* constants) of the BGM track that is being played or should be
+; played if BGM is toggled on
+SOUNDRAM_bgm_id:                equ RAM_sound+$04
+
+; $00 = BGM enabled; $FF = BGM disabled
+SOUNDRAM_bgm_off:               equ RAM_sound+$06
+
+; $00 = sound effects enabled; $FF = sound effects disabled
+SOUNDRAM_sfx_off:               equ RAM_sound+$07
+
 ; Stream properties:
 ; +$00 (W) - Position
 ; +$02 (W) - Remaining ticks for next event
@@ -174,6 +184,28 @@ sound_init:
 
 ; ------------------------------------------------------------------------------
 
+; Breaks
+;   d0-d3/a0-a1
+sound_toggle_sfx:
+	not.b   SOUNDRAM_sfx_off
+	bne     sound_stop_sfx
+	rts
+
+; ------------------------------------------------------------------------------
+
+; Breaks
+;   d0-d1/a0
+sound_toggle_bgm:
+	not.b   SOUNDRAM_bgm_off
+	bne     sound_stop
+
+	; BGM toggled on
+	move.w  SOUNDRAM_bgm_id, d0
+
+	; Fallthrough
+
+; ------------------------------------------------------------------------------
+
 ; Input
 ;   d0.w - BGM track number
 ;
@@ -186,6 +218,14 @@ sound_play_bgm:
 	; Disable vibrato on all PSG tone channels
 	clr.b   SOUNDRAM_vibrato_enable
 
+	move.w  d0, SOUNDRAM_bgm_id
+
+	; Skip if BGM is disabled
+	tst.b   (SOUNDRAM_bgm_off).w
+	beq.s   .bgm_enabled
+	rts
+
+.bgm_enabled:
 	add.w   d0, d0
 	add.w   d0, d0
 	lea     DATA_bgm_list, a0
@@ -221,6 +261,10 @@ sound_resume_bgm:
 ; Breaks
 ;   d0-d3/a0-a2
 sound_play_sfx:
+	; Skip if sound effects are disabled
+	tst.b   (SOUNDRAM_sfx_off).w
+	bne.s   .ret
+
 	; Find stream start location and store it in a2
 	add.w   d0, d0
 	add.w   d0, d0
@@ -236,6 +280,7 @@ sound_play_sfx:
 	clr.w   (a1)+    ; Loop start
 	move.l  a2, (a1) ; Start location
 
+.ret:
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -947,9 +992,7 @@ restore_psg_instr:
 	; Silence channel
 	moveq   #0, d1
 	move.b  d0, d1
-	add.w   d1, d1
-	add.w   d1, d1
-	add.w   d1, d1
+	lsl.w   #3, d1
 	lea     SOUNDRAM_psg_instrs+6, a0
 	move.w  #$FFFF, (a0, d1.w)
 
@@ -978,9 +1021,7 @@ psg_load_instr:
 	lea SOUNDRAM_psg_instrs, a0
 	moveq   #0, d1
 	move.b  d0, d1
-	add.w   d1, d1
-	add.w   d1, d1
-	add.w   d1, d1
+	lsl.w   #3, d1
 	adda.w  d1, a0
 
 	; Store envelope location in PSG channel status

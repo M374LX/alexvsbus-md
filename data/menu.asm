@@ -6,6 +6,7 @@ DATA_menu_titles:
 	dc.b    "          LEVEL SELECT          "
 	dc.b    "          LEVEL SELECT          "
 	dc.b    "            JUKEBOX             "
+	dc.b    "            SETTINGS            "
 	dc.b    "          CONFIRMATION          "
 	dc.b    "          CONFIRMATION          "
 	dc.b    "          CONFIRMATION          "
@@ -13,6 +14,7 @@ DATA_menu_titles:
 	dc.b    "            CREDITS             "
 
 DATA_menu_texts:
+	dc.w    0
 	dc.w    0
 	dc.w    0
 	dc.w    0
@@ -64,12 +66,13 @@ DATA_menu_text_credits:
 	even
 
 DATA_menu_items:
-	dc.w    2, (DATA_menu_items_main-DATA_menu_items)
+	dc.w    3, (DATA_menu_items_main-DATA_menu_items)
 	dc.w    2, (DATA_menu_items_pause-DATA_menu_items)
 	dc.w    3, (DATA_menu_items_difficulty-DATA_menu_items)
 	dc.w    5, (DATA_menu_items_level5-DATA_menu_items)
 	dc.w    3, (DATA_menu_items_level3-DATA_menu_items)
 	dc.w    4, (DATA_menu_items_jukebox-DATA_menu_items)
+	dc.w    2, (DATA_menu_items_settings-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_restart-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_try_again-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_quit-DATA_menu_items)
@@ -79,7 +82,8 @@ DATA_menu_items:
 DATA_menu_items_main:
 	dc.b    $08, $20, "PLAY          "
 	dc.b    $09, $20, "JUKEBOX       "
-	dc.b    $0A, $20, "ABOUT         "
+	dc.b    $0A, $20, "SETTINGS      "
+	dc.b    $0B, $20, "ABOUT         "
 
 DATA_menu_items_pause:
 	dc.b    $05, $A0, "RESUME        "
@@ -112,6 +116,11 @@ DATA_menu_items_jukebox:
 	dc.b    $06, $A0, "BGM 3         "
 	dc.b    $07, $A0, "BGM 4         "
 	dc.b    $08, $A0, "RETURN        "
+
+DATA_menu_items_settings:
+	dc.b    $05, $A0, "MUSIC         "
+	dc.b    $06, $A0, "SFX           "
+	dc.b    $07, $A0, "RETURN        "
 
 DATA_menu_items_restart:
 	dc.b    $06, $20, "RESTART       "

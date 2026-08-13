@@ -91,11 +91,12 @@ MENU_DIFFICULTY:                equ 2
 MENU_LEVEL5:                    equ 3
 MENU_LEVEL3:                    equ 4
 MENU_JUKEBOX:                   equ 5
-MENU_RESTART:                   equ 6
-MENU_TRY_AGAIN:                 equ 7
-MENU_QUIT:                      equ 8
-MENU_ABOUT:                     equ 9
-MENU_CREDITS:                   equ 10
+MENU_SETTINGS:                  equ 6
+MENU_RESTART:                   equ 7
+MENU_TRY_AGAIN:                 equ 8
+MENU_QUIT:                      equ 9
+MENU_ABOUT:                     equ 10
+MENU_CREDITS:                   equ 11
 
 ; Menu action types
 MENUACT_NONE:                   equ 0
