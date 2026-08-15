@@ -389,7 +389,7 @@ update_remaining_time:
 	cmpi.b  #$10, d0
 	bhi.s   .ret
 
-	move.w  #SFX_TIME, d0
+	moveq   #SFX_TIME, d0
 	bra     sound_play_sfx
 
 .ret:
@@ -435,7 +435,7 @@ update_score_count:
 	abcd.b  -(a1), -(a0)
 	abcd.b  -(a1), -(a0)
 
-	move.w  #SFX_SCORE, d0
+	moveq   #SFX_SCORE, d0
 	bra     sound_play_sfx
 
 ; ------------------------------------------------------------------------------
@@ -1381,7 +1381,7 @@ handle_passageways:
 	move.w  #276, d1
 	bsr     add_crack_particles
 
-	move.w  #SFX_HOLE, d0
+	moveq   #SFX_HOLE, d0
 	bsr     sound_play_sfx
 .not_opening_exit:
 
@@ -1514,7 +1514,7 @@ handle_player_interactions:
 	; Check if the coin sound effect needs to be played
 	tst.b   d5
 	beq.s   .dont_play_coin_sound
-	move.w  #SFX_COIN, d0
+	moveq   #SFX_COIN, d0
 	bsr     sound_play_sfx
 .dont_play_coin_sound:
 
@@ -1571,7 +1571,7 @@ handle_player_interactions:
 	move.b  #6, 6(a0) ; Set crate's "pushed" and "moving" flags
 
 	; Play crate push sound effect and stop processing further interactions
-	move.w  #SFX_CRATE, d0
+	moveq   #SFX_CRATE, d0
 	bra     sound_play_sfx
 
 .next_pushable_crate:
@@ -1633,7 +1633,7 @@ handle_player_interactions:
 	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
 
 	; Play slip sound effect and stop processing further interactions
-	move.w  #SFX_SLIP, d0
+	moveq   #SFX_SLIP, d0
 	bra     sound_play_sfx
 
 .next_banana_peel:
@@ -1694,7 +1694,7 @@ handle_player_interactions:
 
 .gush_play_sfx:
 	; Play gush hit sound effect and stop processing further interactions
-	move.w  #SFX_HIT, d0
+	moveq   #SFX_HIT, d0
 	bra     sound_play_sfx
 
 .next_gush:
@@ -1751,7 +1751,7 @@ handle_player_interactions:
 	move.b  #3, 4(a0)    ; Set "running" and "reverse" flags
 
 	; Play spring sound effect and stop processing further interactions
-	move.w  #SFX_SPRING, d0
+	moveq   #SFX_SPRING, d0
 	bra     sound_play_sfx
 
 .next_spring:
@@ -2030,7 +2030,7 @@ handle_fall_sound:
 
 	bset.b  #2, (RAM_player_flags).w ; Set "fell" flag
 
-	move.w  #SFX_FALL, d0
+	moveq   #SFX_FALL, d0
 	bra     sound_play_sfx
 
 .ret:
@@ -2097,7 +2097,7 @@ handle_respawn:
 	move.l  (FPSVAL_M720_PXS).w, (RAM_camera_xvel).w
 .no_camera_retreat:
 
-	move.w  #SFX_RESPAWN, d0
+	moveq   #SFX_RESPAWN, d0
 	bra     sound_play_sfx
 
 .ret:

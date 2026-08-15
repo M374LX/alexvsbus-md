@@ -37,8 +37,8 @@ SOUNDRAM_flags:                 equ RAM_sound+$00
 ; One bit for each channel
 SOUNDRAM_locked_channels:       equ RAM_sound+$02
 
-; The id (BGM_* constants) of the BGM track that is being played or should be
-; played if BGM is toggled on
+; The id of the BGM track that is being played or should be played if BGM is
+; toggled on
 SOUNDRAM_bgm_id:                equ RAM_sound+$04
 
 ; $00 = BGM enabled; $FF = BGM disabled

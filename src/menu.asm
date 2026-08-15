@@ -416,7 +416,7 @@ handle_cheat:
 	move.b  #1, (RAM_progress_cheat_enabled).w
 
 	; Play the coin sound effect
-	move.w  #SFX_COIN, d0
+	moveq   #SFX_COIN, d0
 	bra     sound_play_sfx
 
 .reset_cheat:
