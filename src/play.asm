@@ -1334,7 +1334,7 @@ handle_passageways:
 
 .not_entering:
 	tst.b   (RAM_cur_passageway).w
-	blt     .ret ; Not leaving
+	blt.s   .ret ; Not leaving
 
 	; Point a0 to the current passageway
 	moveq   #0, d0
@@ -1447,7 +1447,7 @@ handle_player_interactions:
 	bclr.l  #$F, d1 ; Clear gold bit
 	add.w   d2, d1
 	cmp.w   d1, d0  ; Coin top
-	blt     .next_coin
+	blt.s   .next_coin
 	sub.w   (RAM_player_height).w, d0
 	add.w   d3, d1
 	cmp.w   d1, d0  ; Coin bottom
@@ -1936,7 +1936,7 @@ do_player_state_specifics:
 
 .state_slip:
 	tst.b   d2 ; Has player's state just changed?
-	bne     .ret ; If so, branch
+	bne.s   .ret ; If so, branch
 	btst.b  #1, (RAM_player_flags).w ; Is player on floor?
 	beq.s   .ret ; If not, branch
 

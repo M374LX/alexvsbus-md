@@ -1664,11 +1664,11 @@ add_play_sprites:
 	lea     (RAM_anims+ANIM_COIN_SPARK_1).w, a3
 .coin_sparks_loop:
 	tst.b   (a3)
-	beq     .next_coin_spark
+	beq.s   .next_coin_spark
 
 	lea     DATA_spritemap_coin_spark_silver, a0
 	btst.b  #7, 2(a2)
-	beq     .not_gold
+	beq.s   .not_gold
 	lea     DATA_spritemap_coin_spark_gold, a0
 .not_gold:
 
