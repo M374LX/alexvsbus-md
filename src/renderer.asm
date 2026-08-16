@@ -473,11 +473,7 @@ draw_menu:
 
 	moveq   #0, d0
 	move.b  (RAM_menu_type).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #5, d0
 	lea     DATA_menu_titles, a1
 	adda.w  d0, a1
 
@@ -660,10 +656,7 @@ draw_menu_selected_item:
 	; Mark selected item
 	moveq   #0, d0
 	move.b  (RAM_menu_selected_item).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #4, d0
 	add.w   d0, a1
 
 	; Set palette
@@ -763,11 +756,7 @@ scr_init_finalscore:
 	; Find message corresponding to the difficulty
 	moveq   #0, d0
 	move.b  RAM_difficulty, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #5, d0
 	lea     .msg, a1
 	adda.w  d0, a1
 
@@ -1609,10 +1598,8 @@ draw_vehicle_buffer:
 	move.w  d0, d1
 
 	; Point a2 to vehicle type data
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	movea.l    a4, a2
+	lsl.w   #3, d0
+	movea.l a4, a2
 	adda.w  d0, a2
 
 	move.w  d1, d0
@@ -1688,9 +1675,7 @@ add_play_sprites:
 	; Find animation frame
 	moveq   #0, d0
 	move.b  (a3), d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	adda.w  d0, a0
 
 	move.w  (a2), d0
@@ -1881,9 +1866,7 @@ add_play_sprites:
 	move.w  d0, d1
 	add.w   d0, d0
 	add.w   d1, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 
 	; Y position of the sprites
 	move.w  #264, d1
@@ -1995,19 +1978,13 @@ add_play_sprites:
 	; Determine spritemap for player character's current animation type
 	moveq   #0, d0
 	move.b  RAM_player_anim_type, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	lea     DATA_player_anims, a2
 	adda.w  d0, a2
 
 	moveq   #0, d0
 	move.b  5(a2), d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #5, d0
 	lea     DATA_spritemap_player, a2
 	adda.w  d0, a2
 
@@ -2015,11 +1992,7 @@ add_play_sprites:
 	; frame
 	moveq   #0, d0
 	move.b  (RAM_anims).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #5, d0
 	adda.w  d0, a2
 
 	; Determine base screen position (d5 = X; d6 = Y)
@@ -2310,10 +2283,7 @@ add_play_sprites:
 	; Otherwise, find the animation frame
 	moveq   #0, d3
 	move.b  (RAM_anims+ANIM_HIT_SPRING).w, d3
-	add.w   d3, d3
-	add.w   d3, d3
-	add.w   d3, d3
-	add.w   d3, d3
+	lsl.w   #4, d3
 	adda.w  d3, a0
 
 .springs_add_spritemap:
@@ -2400,9 +2370,7 @@ add_play_sprites:
 
 	; Find sprite corresponding to gush middle animation frame
 	move.w  d4, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	addi.w  #SPR_GUSH_MIDDLE_1, d0
 
 	; Set sprite size for gush middle
@@ -2519,9 +2487,7 @@ add_play_sprites:
 
 	; Find the X position of the rear wheel
 	move.w  d3, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	addi.w  #48, d0
 
 	lea     DATA_spritemap_truck_wheel, a2
@@ -2565,9 +2531,7 @@ add_play_sprites:
 	move.w  d6, d0
 	add.w   d6, d6
 	add.w   d0, d6
-	add.w   d6, d6
-	add.w   d6, d6
-	add.w   d6, d6
+	lsl.w   #3, d6
 
 	; Apply camera offset and the (128, 128) offset used by the VDP
 	sub.w   (RAM_draw_offset_x).w, d6
@@ -2718,12 +2682,7 @@ add_play_sprites:
 	; Find spritemap corresponding to car color
 	moveq   #0, d0
 	move.b  (RAM_passing_car_color).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #6, d0
 	lea     DATA_spritemap_car, a0
 	adda.w  d0, a0
 
@@ -2743,10 +2702,7 @@ add_play_sprites:
 
 	moveq   #0, d0
 	move.b  (RAM_anims+ANIM_HEN).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #4, d0
 	lea     DATA_spritemap_hen, a0
 	adda.w  d0, a0
 
@@ -2815,9 +2771,7 @@ add_play_sprites:
 	; Point a2 to current animation frame within spritemap
 	moveq   #0, d0
 	move.b  (RAM_anims+ANIM_BUS_WHEELS).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	lea     DATA_spritemap_truck_wheel, a2
 	adda.w  d0, a2
 
@@ -2844,12 +2798,7 @@ add_play_sprites:
 	; Find spritemap for current animation frame of rear door
 	moveq   #0, d0
 	move.b  (RAM_anims+ANIM_BUS_DOOR_REAR).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #6, d0
 	lea     DATA_spritemap_bus_door, a0
 	adda.w  d0, a0
 
@@ -2863,12 +2812,7 @@ add_play_sprites:
 	; Find spritemap for current animation frame of front door
 	moveq   #0, d0
 	move.b  (RAM_anims+ANIM_BUS_DOOR_FRONT).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #6, d0
 	lea     DATA_spritemap_bus_door, a0
 	adda.w  d0, a0
 
@@ -2885,9 +2829,7 @@ add_play_sprites:
 
 	moveq   #0, d0
 	move.b  (RAM_bus_route_sign).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 
 	lea     DATA_spritemap_bus_route_sign, a0
 	adda.w  d0, a0

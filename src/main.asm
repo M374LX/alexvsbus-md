@@ -305,10 +305,7 @@ start_level:
 	moveq   #0, d0
 	moveq   #0, d1
 	move.b  (RAM_difficulty).w, d0
-	add.b   d0, d0
-	add.b   d0, d0
-	add.b   d0, d0
-	add.b   d0, d0
+	lsl.b   #4, d0
 	move.b  (RAM_level_num).w, d1
 	add.b   d1, d1
 	add.b   d1, d0
@@ -359,9 +356,7 @@ start_level:
 	move.w  d0, d1
 	add.w   d0, d0
 	add.w   d1, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 
 	; Store level width in pixels in RAM
 	move.w  d0, (RAM_level_size_pixels).w
@@ -517,9 +512,7 @@ start_level:
 	moveq   #0, d1
 	move.b  (RAM_num_solids).w, d1
 	move.w  d1, d2 ; Ten bytes per solid
-	add.w   d1, d1
-	add.w   d1, d1
-	add.w   d1, d1
+	lsl.w   #3, d1
 	add.w   d2, d2
 	add.w   d2, d1
 	add.l   d1, d0
@@ -715,10 +708,7 @@ sram_save:
 	move.b  (RAM_progress_difficulty).w, d1
 
 	; Combine difficulty and level into a single byte
-	add.b   d1, d1
-	add.b   d1, d1
-	add.b   d1, d1
-	add.b   d1, d1
+	lsl.b   #4, d1
 	or.b    d1, d0
 
 	; Save progress to SRAM

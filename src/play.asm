@@ -226,10 +226,7 @@ add_crack_particles:
 	clr.w   d1
 
 	move.l  d2, d3
-	add.w   d3, d3
-	add.w   d3, d3
-	add.w   d3, d3
-	add.w   d3, d3
+	lsl.w   #4, d3
 	lea     (RAM_crack_particles).w, a0
 	adda.w  d3, a0
 
@@ -517,7 +514,8 @@ move_objects:
 	move.w  10(a0), d2 ; ydest
 	swap.w  d2
 
-	add.l   d1, d0 ; Apply velocity to Y position
+	; Apply velocity to Y position
+	add.l   d1, d0
 
 	tst.l   d1
 	blt.s   .gush_moving_up
@@ -1336,14 +1334,12 @@ handle_passageways:
 
 .not_entering:
 	tst.b   (RAM_cur_passageway).w
-	blt    .ret ; Not leaving
+	blt     .ret ; Not leaving
 
 	; Point a0 to the current passageway
 	moveq   #0, d0
 	move.b  (RAM_cur_passageway).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	movea.l (RAM_ptr_passageways).w, a0
 	adda.w  d0, a0
 
@@ -1489,9 +1485,7 @@ handle_player_interactions:
 	; Start coin spark animation
 	moveq   #0, d0
 	move.b  (RAM_next_coin_spark).w, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	lea     (RAM_anims+ANIM_COIN_SPARK_1).w, a0
 	adda.w  d0, a0
 	move.b  #3, (a0)
@@ -2273,9 +2267,7 @@ handle_player_animation_change:
 
 	; Find offset within DATA_player_anims for current animation type
 	lea     DATA_player_anims, a0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d0, d0
+	lsl.w   #3, d0
 	adda.w  d0, a0
 
 	lea     (RAM_anims).w, a1
