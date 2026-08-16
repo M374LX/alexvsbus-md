@@ -413,7 +413,7 @@ handle_cheat:
 	bge.s   .ret
 
 	; Activate the cheat code
-	move.b  #1, (RAM_progress_cheat_enabled).w
+	st.b    (RAM_progress_cheat_enabled).w
 
 	; Play the coin sound effect
 	moveq   #SFX_COIN, d0

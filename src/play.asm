@@ -743,7 +743,7 @@ handle_car_thrown_peel:
 	cmp.w   (RAM_passing_car_peel_throw_x).w, d0
 	blt.s   .dont_throw_peel
 
-	move.b  #1, (RAM_passing_car_threw_peel).w
+	st.b    (RAM_passing_car_threw_peel).w
 
 	; Second moving peel
 	lea     (RAM_moving_peels+32).w, a0
@@ -2565,7 +2565,7 @@ update_sequence:
 	bsr     move_bus_to_end
 
 	bclr.b  #0, (RAM_play_flags).w    ; Ignore user input
-	move.b  #1, (RAM_camera_follow_player).w
+	st.b    (RAM_camera_follow_player).w
 	bset.b  #1, (RAM_play_flags).w    ; Time running
 	move.b  (FPSVAL_1_S).w, (RAM_time_delay).w
 	bset.b  #5, (RAM_play_flags).w    ; Can pause

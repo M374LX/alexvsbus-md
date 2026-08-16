@@ -615,7 +615,7 @@ check_game_progress:
 	btst.b  #3, (RAM_play_flags).w
 	beq.s   .ret
 
-	move.b  #1, (RAM_progress_checked).w
+	st.b    (RAM_progress_checked).w
 
 	tst.b   (RAM_progress_cheat_enabled).w
 	bne.s   .ret
