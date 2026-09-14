@@ -119,7 +119,7 @@ sound_init:
 
 	; Clear sound RAM
 	moveq   #0, d1
-	lea     RAM_sound, a0
+	lea     (RAM_sound).w, a0
 	moveq   #(SOUNDRAM_size/4)-1, d0
 .soundram_clear_loop:
 	move.l  d1, (a0)+
@@ -141,7 +141,7 @@ sound_init:
 	move.b  $A10001, d0
 	btst.l  #6, d0
 	beq.s   .not_pal
-	bset.b  #1, SOUNDRAM_flags
+	bset.b  #1, (SOUNDRAM_flags).w
 .not_pal:
 
 	; Write zero to all of the following YM2612 registers
@@ -186,7 +186,7 @@ sound_init:
 ; Breaks
 ;   d0-d3/a0-a1
 sound_toggle_sfx:
-	not.b   SOUNDRAM_sfx_off
+	not.b   (SOUNDRAM_sfx_off).w
 	bne     sound_stop_sfx
 	rts
 
@@ -195,11 +195,11 @@ sound_toggle_sfx:
 ; Breaks
 ;   d0-d1/a0
 sound_toggle_bgm:
-	not.b   SOUNDRAM_bgm_off
+	not.b   (SOUNDRAM_bgm_off).w
 	bne     sound_stop
 
 	; BGM toggled on
-	move.w  SOUNDRAM_bgm_id, d0
+	move.w  (SOUNDRAM_bgm_id).w, d0
 
 	; Fallthrough
 
@@ -213,9 +213,9 @@ sound_toggle_bgm:
 ;
 sound_play_bgm:
 	; Disable vibrato on all PSG tone channels
-	clr.b   SOUNDRAM_vibrato_enable
+	clr.b   (SOUNDRAM_vibrato_enable).w
 
-	move.w  d0, SOUNDRAM_bgm_id
+	move.w  d0, (SOUNDRAM_bgm_id).w
 
 	; Skip if BGM is disabled
 	tst.b   (SOUNDRAM_bgm_off).w
@@ -229,7 +229,7 @@ sound_play_bgm:
 	adda.w  d0, a0
 	move.l  (a0), d0
 
-	lea     SOUNDRAM_stream_bgm, a0
+	lea     (SOUNDRAM_stream_bgm).w, a0
 	clr.l   (a0)+    ; Position and ticks
 	st.b    (a0)+    ; Playing
 	clr.b   (a0)+    ; Unused
@@ -258,7 +258,7 @@ sound_play_sfx:
 
 	bsr     sound_stop_sfx
 
-	lea     SOUNDRAM_stream_sfx, a1
+	lea     (SOUNDRAM_stream_sfx).w, a1
 	clr.l   (a1)+    ; Position and ticks
 	st.b    (a1)+    ; Playing
 	clr.b   (a1)+    ; Unused
@@ -273,10 +273,10 @@ sound_play_sfx:
 ; Breaks
 ;   d0-d1/a0
 sound_stop:
-	clr.b   SOUNDRAM_stream_bgm+4 ; Playing
-	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
-	clr.w   SOUNDRAM_locked_channels
-	clr.b   SOUNDRAM_vibrato_enable
+	clr.b   (SOUNDRAM_stream_bgm+4).w ; Playing
+	clr.b   (SOUNDRAM_stream_sfx+4).w ; Playing
+	clr.w   (SOUNDRAM_locked_channels).w
+	clr.b   (SOUNDRAM_vibrato_enable).w
 
 	; Fallthrough
 
@@ -293,7 +293,7 @@ sound_silence_all_channels:
 	move.b  #$FF, (a0)
 
 	move.w  #$FFFF, d0
-	lea     SOUNDRAM_psg_instrs, a0
+	lea     (SOUNDRAM_psg_instrs).w, a0
 	move.w  d0, $06(a0)
 	move.w  d0, $0E(a0)
 	move.w  d0, $16(a0)
@@ -342,17 +342,17 @@ sound_update:
 	bra.s   sound_update
 
 .ym_available:
-	lea     SOUNDRAM_stream_bgm, a2
+	lea     (SOUNDRAM_stream_bgm).w, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_bgm
-	bclr.b  #0, SOUNDRAM_flags ; Clear "handling SFX" flag
+	bclr.b  #0, (SOUNDRAM_flags).w ; Clear "handling SFX" flag
 	bsr.s   sound_handle_events
 .no_bgm:
 
-	lea     SOUNDRAM_stream_sfx, a2
+	lea     (SOUNDRAM_stream_sfx).w, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_sfx
-	bset.b  #0, SOUNDRAM_flags ; Set "handling SFX" flag
+	bset.b  #0, (SOUNDRAM_flags).w ; Set "handling SFX" flag
 	bsr.s   sound_handle_events
 .no_sfx:
 
@@ -389,7 +389,7 @@ sound_handle_events:
 
 	; Check for a channel block, meaning we are handling music and the
 	; channel is locked
-	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
 	bne.s   .no_channel_block
 	cmpi.b  #$50, d0
 	bhs.s   .no_channel_block
@@ -399,7 +399,7 @@ sound_handle_events:
 	andi.w  #$0F, d1
 
 	; Check if the channel is locked
-	move.w  SOUNDRAM_locked_channels, d2
+	move.w  (SOUNDRAM_locked_channels).w, d2
 	btst.l  d1, d2
 	beq.s   .no_channel_block
 
@@ -507,14 +507,14 @@ sound_handle_events:
 	move.w  (a1, d1.w), d1
 
 	; Set base frequency for vibrato
-	lea     SOUNDRAM_vibrato, a0
+	lea     (SOUNDRAM_vibrato).w, a0
 	move.w  d2, d0
 	add.w   d0, d0
 	add.w   d0, d0
 	move.w  d1, (a0, d0.w)
 
 	; Find address for channel within SOUNDRAM_psg_instrs
-	lea     SOUNDRAM_psg_instrs, a0
+	lea     (SOUNDRAM_psg_instrs).w, a0
 	move.w  d2, d0
 	lsl.w   #3, d0
 	adda.w  d0, a0
@@ -543,7 +543,7 @@ sound_handle_events:
 
 	; Store the address for the noise channel within SOUNDRAM_psg_instrs
 	; in a0
-	lea     SOUNDRAM_psg_instrs+$1C, a0
+	lea     (SOUNDRAM_psg_instrs+$1C).w, a0
 
 	; Reset envelope
 	clr.w   (a0)+
@@ -610,7 +610,7 @@ sound_handle_events:
 	andi.w  #3, d2
 
 	; Find the address for the channel within SOUNDRAM_psg_instrs
-	lea     SOUNDRAM_psg_instrs, a0
+	lea     (SOUNDRAM_psg_instrs).w, a0
 	move.w  d2, d0
 	lsl.w   #3, d0
 	adda.w  d0, a0
@@ -627,7 +627,7 @@ sound_handle_events:
 	beq     .next_event
 
 	; Clear vibrato base frequency
-	lea     SOUNDRAM_vibrato, a0
+	lea     (SOUNDRAM_vibrato).w, a0
 	move.w  d2, d0
 	add.w   d0, d0
 	add.w   d0, d0
@@ -681,14 +681,14 @@ sound_handle_events:
 	andi.w  #3, d2
 
 	; Set base frequency for vibrato
-	lea     SOUNDRAM_vibrato, a0
+	lea     (SOUNDRAM_vibrato).w, a0
 	move.w  d2, d0
 	add.w   d0, d0
 	add.w   d0, d0
 	move.w  d1, (a0, d0.w)
 
 	; Find address for channel within SOUNDRAM_psg_instrs
-	lea     SOUNDRAM_psg_instrs, a0
+	lea     (SOUNDRAM_psg_instrs).w, a0
 	move.w  d2, d0
 	lsl.w   #3, d0
 	adda.w  d0, a0
@@ -712,7 +712,7 @@ sound_handle_events:
 	ori.b   #$E0, d1
 
 	; Store the address for the channel's next noise in a0
-	lea     SOUNDRAM_psg_instrs+$1E, a0
+	lea     (SOUNDRAM_psg_instrs+$1E).w, a0
 
 	; Store noise type
 	move.w  d1, (a0)
@@ -729,11 +729,11 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #7, d0
 
-	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
 	bne.s   .ev_set_instr_fm_not_bgm
 
 	; Store instrument number
-	lea     SOUNDRAM_instrs, a0
+	lea     (SOUNDRAM_instrs).w, a0
 	move.b  d1, (a0, d0.w)
 .ev_set_instr_fm_not_bgm:
 
@@ -755,11 +755,11 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #3, d0
 
-	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
 	bne.s   .ev_set_instr_psg_not_bgm
 
 	; Store instrument number
-	lea     SOUNDRAM_instrs+8, a0
+	lea     (SOUNDRAM_instrs+8).w, a0
 	move.b  d1, (a0, d0.w)
 .ev_set_instr_psg_not_bgm:
 
@@ -780,10 +780,10 @@ sound_handle_events:
 	andi.w  #7, d2
 
 	; Enable vibrato
-	bset.b  d2, SOUNDRAM_vibrato_enable
+	bset.b  d2, (SOUNDRAM_vibrato_enable).w
 
 	; Reset vibrato position
-	lea     SOUNDRAM_vibrato, a0
+	lea     (SOUNDRAM_vibrato).w, a0
 	move.w  d2, d0
 	add.w   d0, d0
 	add.w   d0, d0
@@ -800,7 +800,7 @@ sound_handle_events:
 	andi.w  #7, d2
 
 	; Disable vibrato
-	bclr.b  d2, SOUNDRAM_vibrato_enable
+	bclr.b  d2, (SOUNDRAM_vibrato_enable).w
 
 	bra     .next_event
 
@@ -813,9 +813,9 @@ sound_handle_events:
 
 	; Check if the delay needs to be corrected, which is the case if the
 	; system is PAL and the BGM stream is the one being handled
-	btst.b  #1, SOUNDRAM_flags ; PAL system
+	btst.b  #1, (SOUNDRAM_flags).w ; PAL system
 	beq.s   .ev_delay_short_no_correction
-	btst.b  #0, SOUNDRAM_flags ; Handling the BGM stream
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the BGM stream
 	bne.s   .ev_delay_short_no_correction
 
 	lea     pal_delay_correction(pc), a0
@@ -829,13 +829,13 @@ sound_handle_events:
 
 .ev_lock_channel_fm:
 	andi.w  #$07, d0
-	bset.b  d0, SOUNDRAM_locked_channels+1
+	bset.b  d0, (SOUNDRAM_locked_channels+1).w
 
 	bra     .ev_note_off_psg
 
 .ev_lock_channel_psg:
 	andi.w  #3, d0
-	bset.b  d0, SOUNDRAM_locked_channels
+	bset.b  d0, (SOUNDRAM_locked_channels).w
 
 	bra     .ev_note_off_psg
 
@@ -870,7 +870,7 @@ sound_handle_events:
 
 .ev_stop:
 	; If a sound effect has stopped, unlock all channels
-	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
 	beq.s   .ev_stop_not_sfx
 	bsr.s   sound_stop_sfx
 .ev_stop_not_sfx:
@@ -883,7 +883,7 @@ sound_handle_events:
 ; Breaks
 ;   d0-d3/a0-a1
 sound_stop_sfx:
-	move.b  SOUNDRAM_locked_channels+1, d3
+	move.b  (SOUNDRAM_locked_channels+1).w, d3
 
 	; Restore instruments
 
@@ -923,7 +923,7 @@ sound_stop_sfx:
 	bsr     restore_fm_instr
 
 .psg:
-	move.b  SOUNDRAM_locked_channels, d3
+	move.b  (SOUNDRAM_locked_channels).w, d3
 
 	moveq   #0, d0
 	btst.l  d0, d3
@@ -949,8 +949,8 @@ sound_stop_sfx:
 	bsr.s   restore_psg_instr
 
 .ret:
-	clr.w   SOUNDRAM_locked_channels
-	clr.b   SOUNDRAM_stream_sfx+4 ; Playing
+	clr.w   (SOUNDRAM_locked_channels).w
+	clr.b   (SOUNDRAM_stream_sfx+4).w ; Playing
 
 	rts
 
@@ -969,11 +969,11 @@ restore_psg_instr:
 	moveq   #0, d1
 	move.b  d0, d1
 	lsl.w   #3, d1
-	lea     SOUNDRAM_psg_instrs+6, a0
+	lea     (SOUNDRAM_psg_instrs+6).w, a0
 	move.w  #$FFFF, (a0, d1.w)
 
 	moveq   #0, d1
-	lea     SOUNDRAM_instrs+8, a0
+	lea     (SOUNDRAM_instrs+8).w, a0
 	move.b  (a0, d0.w), d1
 
 	; Fallthrough
@@ -994,7 +994,7 @@ psg_load_instr:
 	move.l  (a0, d1.w), d2
 
 	; Find RAM offset for PSG channel status and store it in a0
-	lea SOUNDRAM_psg_instrs, a0
+	lea (SOUNDRAM_psg_instrs).w, a0
 	moveq   #0, d1
 	move.b  d0, d1
 	lsl.w   #3, d1
@@ -1023,7 +1023,7 @@ psg_load_instr:
 ;   d0-d2/a0-a1
 restore_fm_instr:
 	moveq   #0, d1
-	lea     SOUNDRAM_instrs, a0
+	lea     (SOUNDRAM_instrs).w, a0
 	move.b  (a0, d0.w), d1
 
 	; Fallthrough
@@ -1185,14 +1185,14 @@ ym_write:
 ; ------------------------------------------------------------------------------
 
 sound_update_vibrato:
-	lea     SOUNDRAM_vibrato, a0
-	lea     SOUNDRAM_psg_instrs, a1
+	lea     (SOUNDRAM_vibrato).w, a0
+	lea     (SOUNDRAM_psg_instrs).w, a1
 	lea     psg_vibrato_table(pc), a2
 	moveq   #0, d1     ; Channel number (0, 1, 2)
 	moveq   #(3-1), d2 ; Number of PSG tone channels minus one
 .channels_loop:
 	; Skip channel if vibrato is not enabled on it
-	btst.b  d1, SOUNDRAM_vibrato_enable
+	btst.b  d1, (SOUNDRAM_vibrato_enable).w
 	beq.s   .next_channel
 
 	; Skip channel if it is silent
@@ -1225,7 +1225,7 @@ sound_update_vibrato:
 
 sound_update_psg:
 	lea     PSG_DATA, a1
-	lea     SOUNDRAM_psg_instrs, a2
+	lea     (SOUNDRAM_psg_instrs).w, a2
 	moveq   #0, d3     ; Store PSG channel ($00, $20, $40, $60) in d3
 	moveq   #(4-1), d4 ; Number of PSG channels minus one
 
