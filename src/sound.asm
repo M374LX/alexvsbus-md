@@ -29,9 +29,8 @@
 SOUNDRAM_size:                  equ $80
 
 ; Flags:
-; 0 - BGM paused
-; 1 - Handling the SFX (not BGM) stream
-; 2 - PAL system
+; 0 - Handling the SFX (not BGM) stream
+; 1 - PAL system
 SOUNDRAM_flags:                 equ RAM_sound+$00
 
 ; One bit for each channel
@@ -142,7 +141,7 @@ sound_init:
 	move.b  $A10001, d0
 	btst.l  #6, d0
 	beq.s   .not_pal
-	bset.b  #2, SOUNDRAM_flags
+	bset.b  #1, SOUNDRAM_flags
 .not_pal:
 
 	; Write zero to all of the following YM2612 registers
@@ -213,8 +212,6 @@ sound_toggle_bgm:
 ;   d0-d1/a0
 ;
 sound_play_bgm:
-	bclr.b  #0, SOUNDRAM_flags ; Clear "paused" flag
-
 	; Disable vibrato on all PSG tone channels
 	clr.b   SOUNDRAM_vibrato_enable
 
@@ -240,18 +237,6 @@ sound_play_bgm:
 	move.l  d0, (a0) ; Start location
 
 	bra.s   sound_silence_all_channels
-
-; ------------------------------------------------------------------------------
-
-sound_resume_bgm:
-	btst.b  #0, SOUNDRAM_flags ; Test "paused" flag
-	beq.s   .not_paused
-
-	bclr.b  #0, SOUNDRAM_flags ; Clear "paused" flag
-	st.b    SOUNDRAM_stream_bgm+4 ; Playing
-
-.not_paused:
-	rts
 
 ; ------------------------------------------------------------------------------
 
@@ -282,15 +267,6 @@ sound_play_sfx:
 
 .ret:
 	rts
-
-; ------------------------------------------------------------------------------
-
-; Breaks
-;   d0-d1/a0
-sound_pause:
-	bset.b  #0, SOUNDRAM_flags ; Set "paused" flag
-
-	; Fallthrough
 
 ; ------------------------------------------------------------------------------
 
@@ -369,14 +345,14 @@ sound_update:
 	lea     SOUNDRAM_stream_bgm, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_bgm
-	bclr.b  #1, SOUNDRAM_flags ; Clear "handling SFX" flag
+	bclr.b  #0, SOUNDRAM_flags ; Clear "handling SFX" flag
 	bsr.s   sound_handle_events
 .no_bgm:
 
 	lea     SOUNDRAM_stream_sfx, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_sfx
-	bset.b  #1, SOUNDRAM_flags ; Set "handling SFX" flag
+	bset.b  #0, SOUNDRAM_flags ; Set "handling SFX" flag
 	bsr.s   sound_handle_events
 .no_sfx:
 
@@ -413,7 +389,7 @@ sound_handle_events:
 
 	; Check for a channel block, meaning we are handling music and the
 	; channel is locked
-	btst.b  #1, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
 	bne.s   .no_channel_block
 	cmpi.b  #$50, d0
 	bhs.s   .no_channel_block
@@ -753,7 +729,7 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #7, d0
 
-	btst.b  #1, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
 	bne.s   .ev_set_instr_fm_not_bgm
 
 	; Store instrument number
@@ -779,7 +755,7 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #3, d0
 
-	btst.b  #1, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
 	bne.s   .ev_set_instr_psg_not_bgm
 
 	; Store instrument number
@@ -837,9 +813,9 @@ sound_handle_events:
 
 	; Check if the delay needs to be corrected, which is the case if the
 	; system is PAL and the BGM stream is the one being handled
-	btst.b  #2, SOUNDRAM_flags ; PAL system
+	btst.b  #1, SOUNDRAM_flags ; PAL system
 	beq.s   .ev_delay_short_no_correction
-	btst.b  #1, SOUNDRAM_flags ; Handling the BGM stream
+	btst.b  #0, SOUNDRAM_flags ; Handling the BGM stream
 	bne.s   .ev_delay_short_no_correction
 
 	lea     pal_delay_correction(pc), a0
@@ -894,7 +870,7 @@ sound_handle_events:
 
 .ev_stop:
 	; If a sound effect has stopped, unlock all channels
-	btst.b  #1, SOUNDRAM_flags ; Test "handling SFX" flag
+	btst.b  #0, SOUNDRAM_flags ; Test "handling SFX" flag
 	beq.s   .ev_stop_not_sfx
 	bsr.s   sound_stop_sfx
 .ev_stop_not_sfx:
