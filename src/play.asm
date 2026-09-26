@@ -46,22 +46,17 @@ play_clear:
 	move.w  #96,  (RAM_player_x).w
 	move.w  #204, (RAM_player_y).w
 
+	; Set both to -1
+	st.b    (RAM_grabbed_rope_index).w
+	st.b    (RAM_cur_passageway).w
+
 	; Set player initial state
-	move.b  #NONE, (RAM_player_old_state).w
-	clr.b   (RAM_player_state).w
+	st.b    (RAM_player_old_state).w
 	bsr     handle_player_state_change
 
-	move.w  #24, (RAM_bus_x).w
-	move.w  #24, (RAM_bus_init_x).w
-
-	moveq   #NONE, d0
-
-	move.b  d0, (RAM_grabbed_rope_index).w
-	move.b  d0, (RAM_cur_passageway).w
-
-	; Make passing car and hen inactive
-	move.l  d0, (RAM_passing_car_x).w
-	move.l  d0, (RAM_hen_x).w
+	moveq   #24, d0
+	move.w  d0, (RAM_bus_x).w
+	move.w  d0, (RAM_bus_init_x).w
 
 	; Initialize animations
 	moveq   #0, d0
@@ -595,7 +590,8 @@ move_objects:
 	bra.s   .rope_done
 
 .rope_xmin_reached:
-	move.b  #NONE, (RAM_grabbed_rope_index).w
+	; Set grabbed rope index to -1
+	st.b    (RAM_grabbed_rope_index).w
 .rope_done:
 
 	; Pushable crates
@@ -638,7 +634,7 @@ move_objects:
 
 	; Passing car
 	tst.l   (RAM_passing_car_x).w
-	blt.s   .passing_car_done
+	ble.s   .passing_car_done
 
 	move.l  (FPSVAL_1200_PXS).w, d0
 	add.l   d0, (RAM_passing_car_x).w
@@ -650,12 +646,12 @@ move_objects:
 	bge.s   .passing_car_done
 
 	; Deactivate car
-	move.l  #NONE, (RAM_passing_car_x).w
+	clr.l   (RAM_passing_car_x).w
 .passing_car_done:
 
 	; Hen
 	tst.l   (RAM_hen_x).w
-	blt.s   .hen_done
+	ble.s   .hen_done
 
 	; Update hen velocity
 	move.l  (RAM_hen_acc).w, d0
@@ -697,7 +693,7 @@ move_objects:
 	; deactivate it if so
 	cmpi.w  #400, 4(a0)
 	blt.s   .next_crack_particle
-	move.l  #NONE, (a0)
+	clr.l   (a0)
 
 .next_crack_particle:
 	lea     16(a0), a0
@@ -737,7 +733,7 @@ move_objects:
 
 handle_car_thrown_peel:
 	move.w  (RAM_passing_car_x).w, d0
-	blt.s   .dont_throw_peel
+	ble.s   .dont_throw_peel
 	tst.b   (RAM_passing_car_threw_peel).w
 	bne.s   .dont_throw_peel
 	cmp.w   (RAM_passing_car_peel_throw_x).w, d0
@@ -1385,7 +1381,8 @@ handle_passageways:
 	cmpi.w  #(FLOOR_Y-54), d0
 	bgt.s   .ret
 
-	move.b  #NONE, (RAM_cur_passageway).w
+	; Set current passageway index to -1
+	st.b    (RAM_cur_passageway).w
 
 	; No vertical camera movement on time up
 	btst.b  #2, (RAM_play_flags).w
@@ -2008,12 +2005,12 @@ do_player_state_specifics:
 ; ------------------------------------------------------------------------------
 
 handle_fall_sound:
-	btst.b  #2, (RAM_play_flags).w ; Check "time up" flag
+	btst.b  #2, (RAM_play_flags).w   ; Check "time up" flag
 	bne.s   .ret
 	btst.b  #2, (RAM_player_flags).w ; Check "fell" flag
 	bne.s   .ret
-	cmpi.b  #NONE, (RAM_cur_passageway).w
-	bne.s   .ret
+	tst.b   (RAM_cur_passageway).w
+	bge.s   .ret
 	tst.l   (RAM_player_yvel).w
 	ble.s   .ret
 
@@ -2737,8 +2734,8 @@ update_sequence:
 	move.l  d0, (RAM_camera_x).w
 	clr.l   (RAM_camera_y).w
 
-	move.l  #NONE, (RAM_passing_car_x).w
-	move.l  #NONE, (RAM_hen_x).w
+	clr.l   (RAM_passing_car_x).w
+	clr.l   (RAM_hen_x).w
 
 	bset.b  #1, (RAM_sequence_flags).w ; Wipe in screen
 	move.b  (FPSVAL_0_5_S).w, (RAM_sequence_delay).w

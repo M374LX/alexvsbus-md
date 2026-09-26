@@ -63,9 +63,6 @@ SFX_SLIP:                       equ $08
 SFX_SPRING:                     equ $09
 SFX_TIME:                       equ $0A
 
-; Special constant meaning that something does not exist or is unset or inactive
-NONE:                           equ -1
-
 ; Screen types
 SCR_NONE:                       equ 0
 SCR_MENU:                       equ 1
