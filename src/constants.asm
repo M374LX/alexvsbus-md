@@ -89,11 +89,12 @@ MENU_LEVEL5:                    equ 3
 MENU_LEVEL3:                    equ 4
 MENU_JUKEBOX:                   equ 5
 MENU_SETTINGS:                  equ 6
-MENU_RESTART:                   equ 7
-MENU_TRY_AGAIN:                 equ 8
-MENU_QUIT:                      equ 9
-MENU_ABOUT:                     equ 10
-MENU_CREDITS:                   equ 11
+MENU_ERASE:                     equ 7
+MENU_RESTART:                   equ 8
+MENU_TRY_AGAIN:                 equ 9
+MENU_QUIT:                      equ 10
+MENU_ABOUT:                     equ 11
+MENU_CREDITS:                   equ 12
 
 ; Menu action types
 MENUACT_NONE:                   equ 0
@@ -101,6 +102,7 @@ MENUACT_TITLE:                  equ 1
 MENUACT_PLAY:                   equ 2
 MENUACT_RESUME:                 equ 3
 MENUACT_TRY_AGAIN:              equ 4
+MENUACT_ERASE_DATA:             equ 5
 
 ; Gameplay input actions
 PLAY_INPUT_LEFT:                equ 0

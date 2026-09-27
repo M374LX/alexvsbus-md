@@ -109,11 +109,15 @@ handle_menu_action:
 	jmp     .menu_actions_jump_table(pc, d0.w)
 
 .menu_actions_jump_table:
-	bra.s   .no_action ; MENUACT_NONE
-	bra.s   .title     ; MENUACT_TITLE
-	bra.s   .play      ; MENUACT_PLAY
-	bra.s   .resume    ; MENUACT_RESUME
-	bra.s   .try_again ; MENUACT_TRY_AGAIN
+	bra.s   .no_action  ; MENUACT_NONE
+	bra.s   .title      ; MENUACT_TITLE
+	bra.s   .play       ; MENUACT_PLAY
+	bra.s   .resume     ; MENUACT_RESUME
+	bra.s   .try_again  ; MENUACT_TRY_AGAIN
+	bra.s   .erase_data ; MENUACT_ERASE_DATA
+
+.no_action:
+	rts
 
 .title:
 	bra     show_title
@@ -132,9 +136,12 @@ handle_menu_action:
 	clr.l   (RAM_score).w
 	bsr     start_level
 	bset.b  #0, (RAM_sequence_flags).w ; Set "skip initial sequence" flag
-
-.no_action:
 	rts
+
+.erase_data:
+	clr.b   (RAM_progress_difficulty).w
+	move.b  #1, (RAM_progress_level).w
+	bra     sram_erase
 
 ; ------------------------------------------------------------------------------
 
@@ -776,6 +783,17 @@ sram_load:
 .no_data:
 	clr.b   (RAM_progress_difficulty).w
 	move.b  #1, (RAM_progress_level).w
+	rts
+
+; ------------------------------------------------------------------------------
+
+sram_erase:
+	move.b  #1, SRAM_LOCK
+	moveq   #0, d0
+	move.b  d0, SRAM_START+$21
+	move.b  d0, SRAM_START+$41
+	move.b  d0, SRAM_START+$61
+	move.b  d0, SRAM_LOCK
 	rts
 
 ; ------------------------------------------------------------------------------

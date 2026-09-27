@@ -210,7 +210,17 @@ menu_confirm:
 	; Settings
 	bra.w   .settings_item_music
 	bra.w   .settings_item_sfx
+	bra.w   .settings_item_erase_data
 	bra.w   menu_close
+	bra.w   .ret
+	bra.w   .ret
+	bra.w   .ret
+	bra.w   .ret
+
+	; Erase data
+	bra.w   .erase_item_erase_data
+	bra.w   menu_close
+	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
@@ -365,6 +375,18 @@ menu_confirm:
 	bset.b  #2, (RAM_menu_flags).w  ; Set "item changed" flag
 	not.b   (RAM_sfx_off).w
 	bra     sound_toggle_sfx
+
+.erase_item_erase_data:
+	move.b  #MENUACT_ERASE_DATA, (RAM_menu_action).w
+
+	; Return to main menu
+	clr.b   (RAM_menu_stack_size).w
+	moveq   #MENU_MAIN, d0
+	bra     menu_open
+
+.settings_item_erase_data:
+	moveq   #MENU_ERASE, d0
+	bra     menu_open
 
 .restart_item_restart:
 	move.b  #MENUACT_TRY_AGAIN, (RAM_menu_action).w

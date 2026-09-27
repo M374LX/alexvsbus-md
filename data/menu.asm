@@ -10,10 +10,12 @@ DATA_menu_titles:
 	dc.b    "          CONFIRMATION          "
 	dc.b    "          CONFIRMATION          "
 	dc.b    "          CONFIRMATION          "
+	dc.b    "          CONFIRMATION          "
 	dc.b    "             ABOUT              "
 	dc.b    "            CREDITS             "
 
 DATA_menu_texts:
+	dc.w    0
 	dc.w    0
 	dc.w    0
 	dc.w    0
@@ -72,7 +74,8 @@ DATA_menu_items:
 	dc.w    5, (DATA_menu_items_level5-DATA_menu_items)
 	dc.w    3, (DATA_menu_items_level3-DATA_menu_items)
 	dc.w    4, (DATA_menu_items_jukebox-DATA_menu_items)
-	dc.w    2, (DATA_menu_items_settings-DATA_menu_items)
+	dc.w    3, (DATA_menu_items_settings-DATA_menu_items)
+	dc.w    1, (DATA_menu_items_erase-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_restart-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_try_again-DATA_menu_items)
 	dc.w    1, (DATA_menu_items_quit-DATA_menu_items)
@@ -120,7 +123,12 @@ DATA_menu_items_jukebox:
 DATA_menu_items_settings:
 	dc.b    $05, $A0, "MUSIC         "
 	dc.b    $06, $A0, "SFX           "
-	dc.b    $07, $A0, "RETURN        "
+	dc.b    $07, $A0, "ERASE DATA    "
+	dc.b    $08, $A0, "RETURN        "
+
+DATA_menu_items_erase:
+	dc.b    $06, $20, "ERASE DATA    "
+	dc.b    $07, $20, "CANCEL        "
 
 DATA_menu_items_restart:
 	dc.b    $06, $20, "RESTART       "
