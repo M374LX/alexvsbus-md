@@ -141,7 +141,9 @@ handle_menu_action:
 .erase_data:
 	clr.b   (RAM_progress_difficulty).w
 	move.b  #1, (RAM_progress_level).w
-	bra     sram_erase
+	bsr     sram_erase
+	moveq   #MENU_MAIN, d0
+	bra     menu_open
 
 ; ------------------------------------------------------------------------------
 
