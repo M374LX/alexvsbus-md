@@ -2685,9 +2685,9 @@ update_sequence:
 .seq_30:  ; SEQ_TIMEUP_BUS_NEAR
 	; Skip if the passing car and hen are still visible
 	tst.w   (RAM_passing_car_x).w
-	bge     .ret
+	bgt     .ret
 	tst.w   (RAM_hen_x).w
-	bge     .ret
+	bgt     .ret
 
 	; Stop camera from following player
 	clr.b   (RAM_camera_follow_player).w
