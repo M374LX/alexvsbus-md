@@ -107,10 +107,16 @@ menu_update:
 	andi.b  #$E0, d1
 	bne.s   menu_confirm
 
-	; Check if it is the settings menu and one of the sound toggle items
-	; (the first two) is selected
+	; Check if it is one of the settings menus
 	cmpi.b  #MENU_SETTINGS, (RAM_menu_type).w
-	bne.s   .check_selection_change
+	beq.s   .is_settings
+	cmpi.b  #MENU_SETTINGS_PAUSE, (RAM_menu_type).w
+	beq.s   .is_settings
+	bra.s   .check_selection_change
+
+.is_settings:
+	; If so, check if one of the sound toggle items (the first two) is
+	; selected
 	cmpi.b  #2, d0
 	bhs.s   .check_selection_change
 
@@ -160,8 +166,8 @@ menu_confirm:
 	; Pause
 	bra.w   .pause_item_resume
 	bra.w   .pause_item_restart
+	bra.w   .pause_item_settings
 	bra.w   .pause_item_quit
-	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
@@ -212,6 +218,16 @@ menu_confirm:
 	bra.w   .settings_item_sfx
 	bra.w   .settings_item_erase_data
 	bra.w   menu_close
+	bra.w   .ret
+	bra.w   .ret
+	bra.w   .ret
+	bra.w   .ret
+
+	; Settings (pause)
+	bra.w   .settings_item_music
+	bra.w   .settings_item_sfx
+	bra.w   menu_close
+	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
 	bra.w   .ret
@@ -302,6 +318,10 @@ menu_confirm:
 
 .pause_item_restart:
 	moveq   #MENU_RESTART, d0
+	bra     menu_open
+
+.pause_item_settings:
+	moveq   #MENU_SETTINGS_PAUSE, d0
 	bra     menu_open
 
 .pause_item_quit:

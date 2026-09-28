@@ -570,7 +570,7 @@ draw_menu_items:
 	addq.b  #1, d5
 	dbf     d6, .items_loop
 
-	bsr.s   draw_menu_selected_item
+	bsr     draw_menu_selected_item
 
 	; Fallthrough
 
@@ -581,6 +581,8 @@ draw_menu_items:
 draw_menu_values:
 	move.b  (RAM_menu_type), d0
 	cmpi.b  #MENU_SETTINGS, d0
+	beq.s   .check_music
+	cmpi.b  #MENU_SETTINGS_PAUSE, d0
 	beq.s   .check_music
 	rts
 

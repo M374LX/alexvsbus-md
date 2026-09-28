@@ -89,12 +89,13 @@ MENU_LEVEL5:                    equ 3
 MENU_LEVEL3:                    equ 4
 MENU_JUKEBOX:                   equ 5
 MENU_SETTINGS:                  equ 6
-MENU_ERASE:                     equ 7
-MENU_RESTART:                   equ 8
-MENU_TRY_AGAIN:                 equ 9
-MENU_QUIT:                      equ 10
-MENU_ABOUT:                     equ 11
-MENU_CREDITS:                   equ 12
+MENU_SETTINGS_PAUSE:            equ 7
+MENU_ERASE:                     equ 8
+MENU_RESTART:                   equ 9
+MENU_TRY_AGAIN:                 equ 10
+MENU_QUIT:                      equ 11
+MENU_ABOUT:                     equ 12
+MENU_CREDITS:                   equ 13
 
 ; Menu action types
 MENUACT_NONE:                   equ 0
