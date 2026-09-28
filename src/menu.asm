@@ -376,16 +376,16 @@ menu_confirm:
 	not.b   (RAM_sfx_off).w
 	bra     sound_toggle_sfx
 
+.settings_item_erase_data:
+	moveq   #MENU_ERASE, d0
+	bra     menu_open
+
 .erase_item_erase_data:
 	move.b  #MENUACT_ERASE_DATA, (RAM_menu_action).w
 
 	; Return to main menu
 	clr.b   (RAM_menu_stack_size).w
 	moveq   #MENU_MAIN, d0
-	bra     menu_open
-
-.settings_item_erase_data:
-	moveq   #MENU_ERASE, d0
 	bra     menu_open
 
 .restart_item_restart:
