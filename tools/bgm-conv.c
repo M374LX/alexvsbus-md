@@ -318,18 +318,15 @@ void process()
 
 			out_write_byte(0xD0 + speed);
 		} else {
-			int prev_delay = delay;
-
 			delay += speed;
 
-			if (delay < 0x10) {
-				out_data[out_data_size - 1] = 0xD0 + delay;
-			} else if (delay >= 0x10 && prev_delay < 0x10) {
-				out_data[out_data_size - 1] = 0xFE;
-				out_write_byte(delay);
-			} else {
-				out_data[out_data_size - 1] = delay;
+			while (delay > 0x0F) {
+				out_write_byte(0xDF);
+
+				delay -= 0x0F;
 			}
+
+			out_data[out_data_size - 1] = 0xD0 + delay;
 		}
 
 		if (end_reached) break;

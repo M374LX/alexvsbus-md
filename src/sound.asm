@@ -439,7 +439,7 @@ sound_handle_events:
 	cmpi.b  #$CA, d0
 	bls     .ev_disable_vibrato_psg
 	cmpi.b  #$DF, d0
-	bls     .ev_delay_short
+	bls     .ev_delay
 	cmpi.b  #$E6, d0
 	bls     .ev_lock_channel_fm
 	cmpi.b  #$EB, d0
@@ -448,8 +448,6 @@ sound_handle_events:
 	beq     .ev_go_to_loop
 	cmpi.b  #$FD, d0
 	beq     .ev_set_loop_point
-	cmpi.b  #$FE, d0
-	beq     .ev_delay_long
 	cmpi.b  #$FF, d0
 	beq     .ev_stop
 
@@ -804,7 +802,7 @@ sound_handle_events:
 
 	bra     .next_event
 
-.ev_delay_short:
+.ev_delay:
 	; Advance to next event position
 	addq.w  #1, (a2)
 
@@ -814,13 +812,13 @@ sound_handle_events:
 	; Check if the delay needs to be corrected, which is the case if the
 	; system is PAL and the BGM stream is the one being handled
 	btst.b  #1, (SOUNDRAM_flags).w ; PAL system
-	beq.s   .ev_delay_short_no_correction
+	beq.s   .ev_delay_no_correction
 	btst.b  #0, (SOUNDRAM_flags).w ; Handling the BGM stream
-	bne.s   .ev_delay_short_no_correction
+	bne.s   .ev_delay_no_correction
 
 	lea     pal_delay_correction(pc), a0
 	sub.b   (a0, d0.w), d0
-.ev_delay_short_no_correction:
+.ev_delay_no_correction:
 
 	; Set the delay
 	move.w  d0, 2(a2) ; Ticks
@@ -854,17 +852,6 @@ sound_handle_events:
 
 	; Advance to next event position
 	addq.w  #1, (a2)
-
-	bra     .next_event
-
-.ev_delay_long:
-	; Advance to next event position
-	addq.w  #2, (a2)
-
-	; Set the delay
-	moveq   #0, d0
-	move.b  (a0), d0
-	move.w  d0, 2(a2) ; Ticks
 
 	bra     .next_event
 
