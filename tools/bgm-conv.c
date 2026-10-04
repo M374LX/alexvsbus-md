@@ -321,7 +321,8 @@ void process()
 			delay += speed;
 
 			while (delay > 0x0F) {
-				out_write_byte(0xDF);
+				out_data[out_data_size - 1] = 0xDF;
+				out_data_size++;
 
 				delay -= 0x0F;
 			}
