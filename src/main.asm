@@ -213,7 +213,7 @@ handle_pause:
 
 	; Check Start button
 	move.w  (RAM_joystate_hit).w, d0
-	btst.l  #7, d0
+	btst.l  #JOY_START, d0
 	beq.s   .no_pause
 
 	st.b    (RAM_wait_input_up).w

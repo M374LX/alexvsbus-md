@@ -52,7 +52,7 @@ menu_update:
 	move.b  d0, (RAM_menu_selected_item_prev).w
 
 	; Check if D-pad down is pressed
-	btst.l  #1, d7
+	btst.l  #JOY_DOWN, d7
 	beq.s   .check_up
 
 .select_next:
@@ -71,7 +71,7 @@ menu_update:
 
 .check_up:
 	; Check if D-pad up is pressed
-	btst.l  #0, d7
+	btst.l  #JOY_UP, d7
 	beq.s   .selection_done
 
 .select_previous:
@@ -99,7 +99,7 @@ menu_update:
 	move.b  d0, (a0)
 
 	; Return to previous menu by pressing B
-	btst.l  #4, d7
+	btst.l  #JOY_B, d7
 	bne     menu_close
 
 	; Confirm selection by pressing Start/A/C
@@ -122,7 +122,7 @@ menu_update:
 
 	; If so, the setting can be toggled with D-pad left/right
 	move.b  d7, d1
-	andi.b  #$C, d1
+	andi.b  #$0C, d1
 	bne.s   menu_confirm
 
 .check_selection_change:

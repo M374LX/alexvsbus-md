@@ -34,12 +34,22 @@ SCREEN_H:                       equ 224
 VDP_CTRL:                       equ $C00004
 VDP_DATA:                       equ $C00000
 
-; Index of the first VDP sprite
-SPR_INITIAL:                    equ $01F0
+; Joypad buttons
+JOY_UP:                         equ 0
+JOY_DOWN:                       equ 1
+JOY_LEFT:                       equ 2
+JOY_RIGHT:                      equ 3
+JOY_START:                      equ 7
+JOY_A:                          equ 6
+JOY_B:                          equ 4
+JOY_C:                          equ 5
 
 ; SRAM
 SRAM_LOCK:                      equ $A130F1
 SRAM_START:                     equ $200000
+
+; Index of the first VDP sprite
+SPR_INITIAL:                    equ $01F0
 
 ; Screen wipe commands
 WIPECMD_NONE:                   equ 0

@@ -94,12 +94,12 @@ play_set_input:
 	moveq   #0, d0
 	move.w  (RAM_joystate_down).w, d1
 
-	btst.l  #2, d1
+	btst.l  #JOY_LEFT, d1
 	beq.s   .no_left
 	bset.l  #PLAY_INPUT_LEFT, d0
 .no_left:
 
-	btst.l  #3, d1
+	btst.l  #JOY_RIGHT, d1
 	beq.s   .no_right
 	bset.l  #PLAY_INPUT_RIGHT, d0
 .no_right:
