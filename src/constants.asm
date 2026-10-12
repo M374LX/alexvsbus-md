@@ -186,8 +186,6 @@ SOL_KEEP_ON_TOP:                equ 4
 SOL_PASSAGEWAY_ENTRY:           equ 5
 SOL_PASSAGEWAY_EXIT:            equ 6
 
-FLOOR_Y:                        equ 264
-
 ; Vehicle types
 VEH_NONE:                       equ 0
 VEH_PARKED_CAR_BLUE:            equ 1
@@ -200,19 +198,27 @@ VEH_ENDING_CAR_SILVER:          equ 7
 VEH_ENDING_CAR_YELLOW:          equ 8
 
 ; Maximum numbers
-MAX_PASSAGEWAYS:                equ 4
-MAX_CRACK_PARTICLES:            equ 16
-MAX_COIN_SPARKS:                equ 16
+MAX_LEVEL_COLUMNS:              equ 480
 MAX_GUSHES:                     equ 32
 MAX_MOVING_PEELS:               equ 2
-MAX_PUSHABLE_CRATES:            equ 4
+MAX_PASSAGEWAYS:                equ 4
+MAX_PUSHABLE_CRATES:            equ MAX_PASSAGEWAYS
+MAX_CUTSCENE_OBJECTS:           equ 2
+MAX_COIN_SPARKS:                equ 16
+MAX_CRACK_PARTICLES:            equ 16
+
+; Y position of the floor
+FLOOR_Y:                        equ 264
 
 ; Objects with a fixed Y position
 BUS_Y:                          equ 128
 BUS_STOP_SIGN_Y:                equ 176
 POLE_Y:                         equ 120
+GUSH_CRACK_Y:                   equ 260
+GUSH_INITIAL_Y:                 equ 232
 HYDRANT_Y:                      equ 240
 ROPE_Y:                         equ 144
+PUSHABLE_CRATE_Y:               equ 240
 PASSING_CAR_Y:                  equ 184
 HEN_Y:                          equ 224
 

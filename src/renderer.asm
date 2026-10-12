@@ -1201,7 +1201,7 @@ get_column_blocks:
 	bclr.l  #16, d0
 
 	; In case of an overflow, use the first column
-	cmpi.w  #480, d0
+	cmpi.w  #MAX_LEVEL_COLUMNS, d0
 	blt.s   .next_column
 	moveq   #0, d0
 
@@ -2094,7 +2094,7 @@ add_play_sprites:
 
 	lea    (RAM_cutscene_objs+32).w, a2
 	lea    (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
-	moveq  #(2-1), d7
+	moveq  #(MAX_CUTSCENE_OBJECTS-1), d7
 .out_cutscene_objs_loop:
 	tst.b  (a2)
 	beq.s  .next_out_cutscene_obj
@@ -2891,7 +2891,7 @@ add_play_sprites:
 
 	lea    (RAM_cutscene_objs+32).w, a2
 	lea    (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
-	moveq  #(2-1), d7
+	moveq  #(MAX_CUTSCENE_OBJECTS-1), d7
 .in_cutscene_objs_loop:
 	tst.b  (a2)
 	beq.s  .next_in_cutscene_obj

@@ -454,22 +454,22 @@ start_level:
 	move.w  (a1)+, d4
 
 	; Add gush
-	move.w  d4, (a0)     ; x
-	bclr.b  #7, (a0)     ; Clear gush crack bit
+	move.w  d4, (a0)  ; x
+	bclr.b  #7, (a0)  ; Clear gush crack bit
 	addq.w  #2, a0
-	move.w  #232, (a0)+  ; y
+	move.w  #GUSH_INITIAL_Y, (a0)+ ; y
 	clr.w   (a0)+
-	move.l  d2, (a0)+    ; yvel
-	move.w  d3, (a0)+    ; ydest
-	addq.w  #4, a0       ; Skip four already cleared bytes
+	move.l  d2, (a0)+ ; yvel
+	move.w  d3, (a0)+ ; ydest
+	addq.w  #4, a0    ; Skip four already cleared bytes
 
 	; Skip if it is not a gush crack
 	btst.l  #$F, d4
 	beq.s   .gushes_next
 
 	; Otherwise, mark it as a gush crack
-	move.w  #260, -14(a0) ; y
-	st.b    -2(a0)        ; is_crack
+	move.w  #GUSH_CRACK_Y, -14(a0) ; y
+	st.b    -2(a0)                 ; is_crack
 
 .gushes_next:
 	dbf     d7, .gushes_add_loop
@@ -559,8 +559,8 @@ start_level:
 	move.w  d0, (a2)+
 	addi.w  #24, d0
 	move.w  d0, (a2)+
-	move.w  #240, (a2)+
-	move.w  #240+24, (a2)+
+	move.w  #PUSHABLE_CRATE_Y, (a2)+
+	move.w  #(PUSHABLE_CRATE_Y+24), (a2)+
 	move.w  #0, (a2)+
 
 	; Determine if an arrow is shown with the crate

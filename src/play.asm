@@ -700,7 +700,7 @@ move_objects:
 	dbf     d7, .crack_particles_loop
 
 	; Cutscene objects
-	moveq   #(2-1), d7
+	moveq   #MAX_CUTSCENE_OBJECTS-1, d7
 	lea     (RAM_cutscene_objs).w, a0
 .cutscene_objs_loop:
 	; If the object is inactive, skip
