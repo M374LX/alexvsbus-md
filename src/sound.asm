@@ -29,8 +29,10 @@
 SOUNDRAM_size:                  equ $80
 
 ; Flags:
-; 0 - Handling the SFX (not BGM) stream
-; 1 - PAL system
+; 0 - Current stream (0 = BGM; 1 = SFX)
+; 1 - System type (0 = NTSC; 1 = PAL)
+; 2 - BGM toggle (0 = enabled; 1 = disabled)
+; 3 - SFX toggle (0 = enabled; 1 = disabled)
 SOUNDRAM_flags:                 equ RAM_sound+$00
 
 ; One bit for each channel
@@ -39,12 +41,6 @@ SOUNDRAM_locked_channels:       equ RAM_sound+$02
 ; The id of the BGM track that is being played or should be played if BGM is
 ; toggled on
 SOUNDRAM_bgm_id:                equ RAM_sound+$04
-
-; $00 = BGM enabled; $FF = BGM disabled
-SOUNDRAM_bgm_off:               equ RAM_sound+$06
-
-; $00 = sound effects enabled; $FF = sound effects disabled
-SOUNDRAM_sfx_off:               equ RAM_sound+$07
 
 ; Stream properties:
 ; +$00 (W) - Position
@@ -184,19 +180,10 @@ sound_init:
 ; ------------------------------------------------------------------------------
 
 ; Breaks
-;   d0-d3/a0-a1
-sound_toggle_sfx:
-	not.b   (SOUNDRAM_sfx_off).w
-	bne     sound_stop_sfx
-	rts
-
-; ------------------------------------------------------------------------------
-
-; Breaks
 ;   d0-d1/a0
 sound_toggle_bgm:
-	not.b   (SOUNDRAM_bgm_off).w
-	bne     sound_stop
+	bchg.b  #2, (SOUNDRAM_flags).w
+	beq.s   sound_stop
 
 	; BGM toggled on
 	move.w  (SOUNDRAM_bgm_id).w, d0
@@ -218,7 +205,7 @@ sound_play_bgm:
 	move.w  d0, (SOUNDRAM_bgm_id).w
 
 	; Skip if BGM is disabled
-	tst.b   (SOUNDRAM_bgm_off).w
+	btst.b  #2, (SOUNDRAM_flags).w
 	beq.s   .bgm_enabled
 	rts
 
@@ -247,7 +234,7 @@ sound_play_bgm:
 ;   d0-d3/a0-a2
 sound_play_sfx:
 	; Skip if sound effects are disabled
-	tst.b   (SOUNDRAM_sfx_off).w
+	btst.b  #3, (SOUNDRAM_flags).w
 	bne.s   .ret
 
 	; Find stream start location and store it in a2
@@ -345,14 +332,14 @@ sound_update:
 	lea     (SOUNDRAM_stream_bgm).w, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_bgm
-	bclr.b  #0, (SOUNDRAM_flags).w ; Clear "handling SFX" flag
+	bclr.b  #0, (SOUNDRAM_flags).w ; Set current stream to BGM
 	bsr.s   sound_handle_events
 .no_bgm:
 
 	lea     (SOUNDRAM_stream_sfx).w, a2
 	tst.b   4(a2) ; Playing
 	beq.s   .no_sfx
-	bset.b  #0, (SOUNDRAM_flags).w ; Set "handling SFX" flag
+	bset.b  #0, (SOUNDRAM_flags).w ; Set current stream to SFX
 	bsr.s   sound_handle_events
 .no_sfx:
 
@@ -389,7 +376,7 @@ sound_handle_events:
 
 	; Check for a channel block, meaning we are handling music and the
 	; channel is locked
-	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the SFX stream
 	bne.s   .no_channel_block
 	cmpi.b  #$50, d0
 	bhs.s   .no_channel_block
@@ -727,7 +714,7 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #7, d0
 
-	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the SFX stream
 	bne.s   .ev_set_instr_fm_not_bgm
 
 	; Store instrument number
@@ -753,7 +740,7 @@ sound_handle_events:
 	; Keep channel number in d0
 	andi.w  #3, d0
 
-	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the SFX stream
 	bne.s   .ev_set_instr_psg_not_bgm
 
 	; Store instrument number
@@ -813,7 +800,7 @@ sound_handle_events:
 	; system is PAL and the BGM stream is the one being handled
 	btst.b  #1, (SOUNDRAM_flags).w ; PAL system
 	beq.s   .ev_delay_no_correction
-	btst.b  #0, (SOUNDRAM_flags).w ; Handling the BGM stream
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the SFX stream
 	bne.s   .ev_delay_no_correction
 
 	lea     pal_delay_correction(pc), a0
@@ -857,12 +844,21 @@ sound_handle_events:
 
 .ev_stop:
 	; If a sound effect has stopped, unlock all channels
-	btst.b  #0, (SOUNDRAM_flags).w ; Test "handling SFX" flag
+	btst.b  #0, (SOUNDRAM_flags).w ; Handling the BGM stream
 	beq.s   .ev_stop_not_sfx
 	bsr.s   sound_stop_sfx
 .ev_stop_not_sfx:
 
 	clr.b   4(a2) ; Playing
+	rts
+
+; ------------------------------------------------------------------------------
+
+; Breaks
+;   d0-d3/a0-a1
+sound_toggle_sfx:
+	bchg.b  #3, (SOUNDRAM_flags).w
+	beq.s   sound_stop_sfx
 	rts
 
 ; ------------------------------------------------------------------------------
