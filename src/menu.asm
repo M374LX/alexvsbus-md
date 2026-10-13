@@ -433,7 +433,7 @@ handle_cheat:
 
 	moveq   #0, d0
 	move.b  (RAM_progress_cheat_pos).w, d0
-	lea     DATA_cheat_sequence, a0
+	lea     (DATA_cheat_sequence).w, a0
 	adda.w  d0, a0
 
 	move.b  (RAM_menu_selected_item).w, d0
@@ -529,7 +529,7 @@ menu_open:
 	; minus one)
 	add.w   d0, d0
 	add.w   d0, d0
-	lea     DATA_menu_items, a0
+	lea     (DATA_menu_items).w, a0
 	move.w  (a0, d0.w), d0
 	move.b  d0, (RAM_menu_last_item).w
 
@@ -605,7 +605,7 @@ menu_close:
 	; minus one)
 	add.w   d0, d0
 	add.w   d0, d0
-	lea     DATA_menu_items, a0
+	lea     (DATA_menu_items).w, a0
 	move.w  (a0, d0.w), d0
 	move.b  d0, (RAM_menu_last_item).w
 

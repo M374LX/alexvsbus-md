@@ -318,7 +318,7 @@ start_level:
 	move.b  (RAM_level_num).w, d1
 	add.b   d1, d1
 	add.b   d1, d0
-	lea     DATA_levels, a0
+	lea     (DATA_levels).w, a0
 	adda.w  d0, a0
 
 	; Set route sign for the bus at the start of the level
@@ -336,7 +336,7 @@ start_level:
 
 	; Store level data location in a0
 	move.w  (a0), d0
-	lea     DATA_levels, a0
+	lea     (DATA_levels).w, a0
 	adda.w  d0, a0
 
 	; Set number of characters at bus rear door
@@ -446,8 +446,8 @@ start_level:
 	move.b  (RAM_num_gushes).w, d7
 	beq.s   .gushes_done ; Skip if there are no gushes
 
-	move.l  DATA_gush_move_pattern_1, d2
-	move.w  DATA_gush_move_pattern_1+6, d3
+	move.l  (DATA_gush_move_pattern_1).w, d2
+	move.w  (DATA_gush_move_pattern_1+6).w, d3
 	lea     (RAM_gushes).w, a0
 	subq.b  #1, d7
 .gushes_add_loop:
@@ -803,11 +803,11 @@ sram_erase:
 ; Load the values that depend on the frame rate (60 or 50 Hz) into RAM:
 ; time delays, velocities, and accelerations
 load_fps_values:
-	lea     DATA_fps_values_ntsc, a0
+	lea     (DATA_fps_values_ntsc).w, a0
 	move.b  $A10001, d0
 	btst.l  #6, d0
 	beq.s   .not_pal
-	lea     DATA_fps_values_pal, a0
+	lea     (DATA_fps_values_pal).w, a0
 .not_pal:
 
 	lea     (RAM_fpsvals).w, a1

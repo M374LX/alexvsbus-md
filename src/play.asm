@@ -62,7 +62,7 @@ play_clear:
 	moveq   #0, d0
 	moveq   #NUM_ANIMS-1, d7
 	lea     (RAM_anims).w, a0
-	lea     DATA_anims_init, a1
+	lea     (DATA_anims_init).w, a1
 .anims_init_loop:
 	; Find delay
 	movea.w (a1)+, a2
@@ -2263,7 +2263,7 @@ handle_player_animation_change:
 	beq.s   .ret
 
 	; Find offset within DATA_player_anims for current animation type
-	lea     DATA_player_anims, a0
+	lea     (DATA_player_anims).w, a0
 	lsl.w   #3, d0
 	adda.w  d0, a0
 

@@ -279,7 +279,7 @@ scr_init_menu:
 	lea     VDP_DATA, a0
 
 	; Load palettes
-	lea     DATA_palettes_menu, a1
+	lea     (DATA_palettes_menu).w, a1
 	move.w  #(96/4)-1, d7 ; Palette size
 	move.l  #$C0000000, 4(a0)
 .palette_load_loop:
@@ -381,14 +381,14 @@ draw_new_menu:
 	moveq   #0, d0
 	move.b  (RAM_menu_type_prev).w, d0
 	add.w   d0, d0
-	lea     DATA_menu_texts, a1
+	lea     (DATA_menu_texts).w, a1
 	adda.w  d0, a1
 	move.w  (a1), d0
 
 	; Skip if there is no text
 	beq.s   .text_end
 
-	lea     DATA_menu_texts, a1
+	lea     (DATA_menu_texts).w, a1
 	adda.w  d0, a1
 
 	; Get screen position
@@ -433,7 +433,7 @@ draw_new_menu:
 	move.b  (RAM_menu_type_prev).w, d0
 	add.w   d0, d0
 	add.w   d0, d0
-	lea     DATA_menu_items, a1
+	lea     (DATA_menu_items).w, a1
 	adda.w  2(a1, d0.w), a1
 
 	move.w  #' ', d1
@@ -474,7 +474,7 @@ draw_menu:
 	moveq   #0, d0
 	move.b  (RAM_menu_type).w, d0
 	lsl.w   #5, d0
-	lea     DATA_menu_titles, a1
+	lea     (DATA_menu_titles).w, a1
 	adda.w  d0, a1
 
 	; Skip if there is no title
@@ -498,14 +498,14 @@ draw_menu:
 	moveq   #0, d0
 	move.b  (RAM_menu_type).w, d0
 	add.w   d0, d0
-	lea     DATA_menu_texts, a1
+	lea     (DATA_menu_texts).w, a1
 	adda.w  d0, a1
 	move.w  (a1), d0
 
 	; Skip if there is no text
 	beq.s   .text_end
 
-	lea     DATA_menu_texts, a1
+	lea     (DATA_menu_texts).w, a1
 	adda.w  d0, a1
 
 	; Get screen position
@@ -552,7 +552,7 @@ draw_menu_items:
 	move.b  (RAM_menu_type).w, d0
 	add.w   d0, d0
 	add.w   d0, d0
-	lea     DATA_menu_items, a1
+	lea     (DATA_menu_items).w, a1
 	adda.w  2(a1, d0.w), a1
 
 	moveq   #0, d5
@@ -652,7 +652,7 @@ draw_menu_selected_item:
 	move.b  (RAM_menu_type).w, d0
 	add.w   d0, d0
 	add.w   d0, d0
-	lea     DATA_menu_items, a1
+	lea     (DATA_menu_items).w, a1
 	adda.w  2(a1, d0.w), a1
 
 	; Mark selected item
@@ -787,7 +787,7 @@ scr_init_play:
 	move.w  #$9202, 4(a0)
 
 	; Load palettes
-	lea     DATA_palettes_play, a1
+	lea     (DATA_palettes_play).w, a1
 	move.w  #(128/4)-1, d7 ; Palette size
 	move.l  #$C0000000, 4(a0)
 .palette_load_loop:
@@ -975,7 +975,7 @@ scr_draw_play:
 
 .redraw_full:
 	; Set sky color
-	lea     DATA_sky_colors, a1
+	lea     (DATA_sky_colors).w, a1
 	moveq   #0, d0
 	move.b  (RAM_level_sky_color).w, d0
 	add.w   d0, d0
@@ -1185,7 +1185,7 @@ get_column_blocks:
 	rts
 .not_ending:
 
-	lea     DATA_level_column_hole_blocks, a4
+	lea     (DATA_level_column_hole_blocks).w, a4
 	movea.l (RAM_ptr_level_columns).w, a5
 
 	; Bit 16 determines whether it is the first (0) or second (1) column
@@ -1276,7 +1276,7 @@ get_column_blocks:
 draw_column:
 	lea     VDP_DATA, a0
 	lea     (RAM_level_block_buffer).w, a2
-	lea     DATA_level_blocks, a4
+	lea     (DATA_level_blocks).w, a4
 
 	move.w  (RAM_draw_col_tiles).w, d1
 
@@ -1539,7 +1539,7 @@ draw_vehicle_buffer_full:
 ; d0 = column index
 ; d7 = number of columns minus one
 draw_vehicle_buffer:
-	lea     DATA_vehicle_types, a4
+	lea     (DATA_vehicle_types).w, a4
 	lea     DATA_vehicle_tilemaps, a5
 
 	lea     VDP_DATA, a0
@@ -1973,7 +1973,7 @@ add_play_sprites:
 	moveq   #0, d0
 	move.b  RAM_player_anim_type, d0
 	lsl.w   #3, d0
-	lea     DATA_player_anims, a2
+	lea     (DATA_player_anims).w, a2
 	adda.w  d0, a2
 
 	moveq   #0, d0
