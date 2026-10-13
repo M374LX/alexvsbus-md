@@ -912,7 +912,7 @@ scr_draw_play:
 
 	; Determine the X position of the camera in 24-pixel columns and store
 	; it in RAM_col24
-	lea     DATA_lut_div3, a0
+	lea     (DATA_lut_div3).w, a0
 	adda.w  d1, a0
 	moveq   #0, d0
 	move.b  (a0), d0
@@ -1121,11 +1121,11 @@ prepare_draw_column:
 	addi.w  #14, d0 ; Right column
 .left_column:
 
-	lea     DATA_lut_mod3, a0
+	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
 	move.b  (a0), d1
 
-	lea     DATA_lut_div3, a0
+	lea     (DATA_lut_div3).w, a0
 	adda.w  d0, a0
 
 	move.b  (a0), d2
@@ -1361,12 +1361,12 @@ draw_all_columns:
 	move.w  (RAM_col32).w, d0
 	add.w   a6, d0
 
-	lea     DATA_lut_mod3, a0
+	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
 	moveq   #0, d2
 	move.b  (a0), d2
 
-	lea     DATA_lut_div3, a0
+	lea     (DATA_lut_div3).w, a0
 	adda.w  d0, a0
 
 	moveq   #0, d1
