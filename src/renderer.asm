@@ -880,12 +880,13 @@ scr_init_play:
 ; ------------------------------------------------------------------------------
 
 scr_draw_play:
-	move.w  (RAM_camera_x).w, (RAM_draw_offset_x).w
 	move.w  (RAM_camera_y).w, d0
 	addi.w  #46, d0
 	move.w  d0, (RAM_draw_offset_y).w
 
-	move.w  (RAM_draw_offset_x).w, d0
+	move.w  (RAM_camera_x).w, d0
+	move.w  d0, (RAM_draw_offset_x).w
+
 	lsr.w   #5, d0
 	move.w  d0, (RAM_col32).w
 	add.w   d0, d0
@@ -983,29 +984,20 @@ scr_draw_play:
 	move.w  (a1), (a0)
 
 	bsr     draw_all_columns
-	bsr     draw_vehicle_buffer_full
-
-	bra.s   .redraw_done
+	bra     draw_vehicle_buffer_full
 
 .redraw_column:
-	moveq   #0, d0
-
-	btst.b  #2, (RAM_redraw_mode).w
-	beq.s   .moved_left_1
-
-	moveq   #15, d0
-.moved_left_1:
 	bsr     prepare_draw_column
 	bsr     draw_column
 
 	moveq   #0, d0
 
 	btst.b  #2, (RAM_redraw_mode).w
-	beq.s   .moved_left_2
+	beq.s   .moved_left
 
 .redraw_only_vehicles:
 	moveq   #56, d0
-.moved_left_2:
+.moved_left:
 
 	tst.l   (RAM_bus_xvel).w
 	beq.s   .bus_not_moving
@@ -1013,7 +1005,7 @@ scr_draw_play:
 .bus_not_moving:
 
 	moveq   #(4-1), d7
-	bsr     draw_vehicle_buffer
+	bra     draw_vehicle_buffer
 
 .redraw_done:
 	rts
