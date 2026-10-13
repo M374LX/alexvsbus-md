@@ -129,7 +129,7 @@ handle_menu_action:
 
 .resume:
 	move.b  #SCR_PLAY, (RAM_screen_type_next).w
-	bset.b  #0, RAM_force_full_redraw
+	bset.b  #0, (RAM_force_full_redraw).w
 	rts
 
 .try_again:

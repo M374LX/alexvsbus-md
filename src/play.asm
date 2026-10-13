@@ -819,7 +819,7 @@ move_player:
 	bgt.s   .skip_left_limit
 	move.l  d1, d0
 .skip_left_limit:
-	move.l  d0, RAM_player_xvel
+	move.l  d0, (RAM_player_xvel).w
 .decel_accel_done:
 
 	; Apply gravity
@@ -1093,7 +1093,7 @@ handle_solids:
 	; Otherwise, we are done handling the level's fixed solids and need to
 	; move to the pushable crate solids
 	bset.l  #1, d3
-	lea     RAM_pushable_crate_solids, a0
+	lea     (RAM_pushable_crate_solids).w, a0
 	moveq   #MAX_PUSHABLE_CRATES-1, d7
 	bra     .solids_loop_ledge
 .pushable_crate_ledge_test_done:

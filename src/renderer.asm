@@ -757,7 +757,7 @@ scr_init_finalscore:
 
 	; Find message corresponding to the difficulty
 	moveq   #0, d0
-	move.b  RAM_difficulty, d0
+	move.b  (RAM_difficulty).w, d0
 	lsl.w   #5, d0
 	lea     .msg, a1
 	adda.w  d0, a1
@@ -1688,7 +1688,7 @@ add_play_sprites:
 ;---------------------------------;
 
 	moveq   #MAX_CRACK_PARTICLES-1, d7
-	lea     RAM_crack_particles, a2
+	lea     (RAM_crack_particles).w, a2
 
 	; Determine spritemap for current animation frame
 	lea     DATA_spritemap_crack_particles, a4
@@ -1966,12 +1966,12 @@ add_play_sprites:
 ;--------------------------------------;
 
 	; Check if the player character is visible
-	btst.b  #0, RAM_player_flags
+	btst.b  #0, (RAM_player_flags).w
 	beq     .player_sprites_done
 
 	; Determine spritemap for player character's current animation type
 	moveq   #0, d0
-	move.b  RAM_player_anim_type, d0
+	move.b  (RAM_player_anim_type).w, d0
 	lsl.w   #3, d0
 	lea     (DATA_player_anims).w, a2
 	adda.w  d0, a2
