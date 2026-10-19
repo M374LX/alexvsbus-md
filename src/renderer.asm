@@ -1104,9 +1104,6 @@ update_hud:
 ; ------------------------------------------------------------------------------
 
 prepare_draw_column:
-	moveq   #0, d1
-	moveq   #0, d2
-
 	move.w  (RAM_col32).w, d0
 	btst.b  #2, (RAM_redraw_mode).w
 	beq.s   .left_column
@@ -1115,11 +1112,13 @@ prepare_draw_column:
 
 	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
+	moveq   #0, d1
 	move.b  (a0), d1
 
 	lea     (DATA_lut_div3).w, a0
 	adda.w  d0, a0
 
+	moveq   #0, d2
 	move.b  (a0), d2
 	add.w   d2, d2
 	add.w   d2, d2
@@ -1351,26 +1350,26 @@ draw_all_columns:
 
 	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
-	moveq   #0, d2
-	move.b  (a0), d2
+	moveq   #0, d1
+	move.b  (a0), d1
 
 	lea     (DATA_lut_div3).w, a0
 	adda.w  d0, a0
 
-	moveq   #0, d1
-	move.b  (a0), d1
-	add.w   d1, d1
-	add.w   d1, d1
-	add.w   d2, d1
+	moveq   #0, d2
+	move.b  (a0), d2
+	add.w   d2, d2
+	add.w   d2, d2
+	add.w   d1, d2
 
 	add.w   d0, d0
 	add.w   d0, d0
 	andi.w  #$3F, d0
 
 	move.w  d0, (RAM_draw_col_plane).w
-	move.w  d2, (RAM_draw_col_tiles).w
+	move.w  d1, (RAM_draw_col_tiles).w
 
-	move.w  d1, d0
+	move.w  d2, d0
 	bsr     get_column_blocks
 	bsr     draw_column
 
