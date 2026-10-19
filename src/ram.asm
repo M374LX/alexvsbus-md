@@ -149,6 +149,7 @@ RAM_hit_spring:                 equ $FFFF9008
 RAM_bus_stop_sign1_x:           equ $FFFF900A
 RAM_bus_stop_sign2_x:           equ $FFFF900C
 
+RAM_level_num_columns:          equ $FFFF900E
 RAM_level_size_pixels:          equ $FFFF9010
 RAM_level_sky_color:            equ $FFFF9012
 RAM_level_bgm:                  equ $FFFF9013

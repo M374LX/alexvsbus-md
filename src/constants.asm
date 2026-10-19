@@ -198,7 +198,6 @@ VEH_ENDING_CAR_SILVER:          equ 7
 VEH_ENDING_CAR_YELLOW:          equ 8
 
 ; Maximum numbers
-MAX_LEVEL_COLUMNS:              equ 480
 MAX_GUSHES:                     equ 32
 MAX_MOVING_PEELS:               equ 2
 MAX_PASSAGEWAYS:                equ 4

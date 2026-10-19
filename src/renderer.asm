@@ -1143,59 +1143,21 @@ prepare_draw_column:
 ; Input:
 ; d0 - column number
 get_column_blocks:
-	lea     (RAM_level_block_buffer).w, a0
-
-	btst.b  #7, (RAM_play_flags).w
-	beq.s   .not_ending
-
-	; If it is the ending sequence, the blocks are always
-	; (0, 1, 2, 3, 4, 5)
-
-	moveq   #16, d2
-
-	; First column
-	moveq   #0, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-
-	; Second column
-	lea     20(a0), a0
-	moveq   #0, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-
-	rts
-.not_ending:
-
-	lea     (DATA_level_column_hole_blocks).w, a4
-	movea.l (RAM_ptr_level_columns).w, a5
-
 	; Bit 16 determines whether it is the first (0) or second (1) column
 	; being processed; we clear it because we start with the first column
 	bclr.l  #16, d0
 
-	; In case of an overflow, use the first column
-	cmpi.w  #MAX_LEVEL_COLUMNS, d0
-	blt.s   .next_column
-	moveq   #0, d0
+	lea     (RAM_level_block_buffer).w, a0
+
+	; Use the default blocks if it is the ending sequence or the column
+	; number is greater than the number of level columns in the level
+	btst.b  #7, (RAM_play_flags).w
+	bne.s   .default_blocks
+	cmp.w   (RAM_level_num_columns).w, d0
+	bge.s   .default_blocks
+
+	lea     (DATA_level_column_hole_blocks).w, a4
+	movea.l (RAM_ptr_level_columns).w, a5
 
 .next_column:
 	movea.l a5, a1
@@ -1267,6 +1229,40 @@ get_column_blocks:
 	addq.w  #1, d0
 	lea     32(a0), a0
 	bra.s   .next_column
+
+.default_blocks:
+	; The default blocks are (0, 1, 2, 3, 4, 5)
+
+	moveq   #16, d2
+
+	; First column
+	moveq   #0, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+
+	; Second column
+	lea     20(a0), a0
+	moveq   #0, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
 
 .ret:
 	rts

@@ -129,7 +129,7 @@ handle_menu_action:
 
 .resume:
 	move.b  #SCR_PLAY, (RAM_screen_type_next).w
-	bset.b  #0, (RAM_force_full_redraw).w
+	st.b    (RAM_force_full_redraw).w
 	rts
 
 .try_again:
@@ -360,6 +360,9 @@ start_level:
 	; Read number of level columns
 	move.w  (a0), d0
 
+	; Store number of level columns in RAM
+	move.w  d0, (RAM_level_num_columns).w
+
 	; Calculate total level width in pixels (that is, multiply the number of
 	; level columns by 24) and store the result in d0
 	move.w  d0, d1
@@ -561,7 +564,7 @@ start_level:
 	move.w  d0, (a2)+
 	move.w  #PUSHABLE_CRATE_Y, (a2)+
 	move.w  #(PUSHABLE_CRATE_Y+24), (a2)+
-	move.w  #0, (a2)+
+	clr.w   (a2)+
 
 	; Determine if an arrow is shown with the crate
 	tst.w   4(a0)
@@ -576,7 +579,7 @@ start_level:
 
 	clr.b   (RAM_progress_checked).w
 	move.b  #SCR_PLAY, (RAM_screen_type_next).w
-	bset.b  #0, (RAM_force_full_redraw).w
+	st.b    (RAM_force_full_redraw).w
 
 	moveq   #0, d0
 	move.b  (RAM_level_bgm).w, d0
@@ -593,7 +596,7 @@ start_ending_sequence:
 	bsr     play_clear
 
 	move.b  #SCR_PLAY, (RAM_screen_type_next).w
-	bset.b  #0, (RAM_force_full_redraw).w
+	st.b    (RAM_force_full_redraw).w
 
 	; Set flag indicating it is the ending sequence
 	bset.b  #7, (RAM_play_flags).w
