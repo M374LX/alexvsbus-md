@@ -987,18 +987,15 @@ scr_draw_play:
 	bra     draw_vehicle_buffer_full
 
 .redraw_column:
-	bsr     prepare_draw_column
-	bsr     draw_column
+	bsr     draw_one_column
 
 	moveq   #0, d0
-
 	btst.b  #2, (RAM_redraw_mode).w
 	beq.s   .moved_left
-
-.redraw_only_vehicles:
 	moveq   #56, d0
 .moved_left:
 
+.redraw_only_vehicles:
 	tst.l   (RAM_bus_xvel).w
 	beq.s   .bus_not_moving
 	moveq   #60, d0
@@ -1103,13 +1100,111 @@ update_hud:
 
 ; ------------------------------------------------------------------------------
 
-prepare_draw_column:
+draw_all_columns:
+	; Use a6 to keep track of the column to be drawn (because no data
+	; registers are available)
+	suba.l  a6, a6
+
+.columns_loop:
+	move.w  (RAM_col32).w, d0
+	add.w   a6, d0
+
+	bsr     prepare_draw_column
+	bsr.s   draw_column
+
+	addq.w  #1, a6
+	cmpa.w  #16, a6
+	blo.s   .columns_loop
+
+	rts
+
+; ------------------------------------------------------------------------------
+
+draw_one_column:
 	move.w  (RAM_col32).w, d0
 	btst.b  #2, (RAM_redraw_mode).w
 	beq.s   .left_column
 	addi.w  #14, d0 ; Right column
 .left_column:
 
+	bsr.s   prepare_draw_column
+
+	; Fallthrough
+
+; ------------------------------------------------------------------------------
+
+draw_column:
+	lea     VDP_DATA, a0
+	lea     (RAM_level_block_buffer).w, a2
+	lea     (DATA_level_blocks).w, a4
+
+	move.w  (RAM_draw_col_tiles).w, d1
+
+	move.w  #(18*64), d2
+	add.w   (RAM_draw_col_plane).w, d2
+	add.w   d2, d2
+	ori.w   #$6000, d2
+
+	; Height of a level block in tiles (3) multiplied by 4
+	moveq   #(3*4), d3
+
+	; Set VDP autoincrement to (64*2)
+	move.w  #$8F00|(64*2), 4(a0)
+
+	moveq   #(4-1), d7
+.row_loop:
+	moveq   #0, d4
+	moveq   #0, d5
+
+	move.w  d2, 4(a0)
+	move.w  #3, 4(a0)
+
+	moveq   #(30-1), d6
+.column_loop:
+	movea.l a2, a1
+	adda.w  d5, a1
+	adda.w  d5, a1
+
+	move.w  (a1), d0
+	add.w   d4, d0
+	add.w   d1, d0
+
+	add.w   d0, d0
+	movea.l a4, a3
+	adda.w  d0, a3
+
+	; Write tilemap entry
+	move.w  (a3), (a0)
+
+	addq.w  #4, d4
+	cmp.w   d3, d4
+	bne.s   .next_column
+
+	addq.w  #1, d5
+	moveq   #0, d4
+
+.next_column:
+	dbf     d6, .column_loop
+
+	addq.w  #1, d1
+	cmpi.w  #3, d1
+	bne.s   .next_row
+
+	moveq   #0, d1
+	lea     32(a2), a2
+
+.next_row:
+	addq.w  #2, d2
+	dbf     d7, .row_loop
+
+	; Reset VDP autoincrement to 2
+	move.w  #$8F02, 4(a0)
+
+	rts
+
+; ------------------------------------------------------------------------------
+
+prepare_draw_column:
 	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
 	moveq   #0, d1
@@ -1264,119 +1359,6 @@ get_column_blocks:
 	move.w  d1, (a0)+
 
 .ret:
-	rts
-
-; ------------------------------------------------------------------------------
-
-draw_column:
-	lea     VDP_DATA, a0
-	lea     (RAM_level_block_buffer).w, a2
-	lea     (DATA_level_blocks).w, a4
-
-	move.w  (RAM_draw_col_tiles).w, d1
-
-	move.w  #(18*64), d2
-	add.w   (RAM_draw_col_plane).w, d2
-	add.w   d2, d2
-	ori.w   #$6000, d2
-
-	; Height of a level block in tiles (3) multiplied by 4
-	moveq   #(3*4), d3
-
-	; Set VDP autoincrement to (64*2)
-	move.w  #$8F00|(64*2), 4(a0)
-
-	moveq   #(4-1), d7
-.row_loop:
-	moveq   #0, d4
-	moveq   #0, d5
-
-	move.w  d2, 4(a0)
-	move.w  #3, 4(a0)
-
-	moveq   #(30-1), d6
-.column_loop:
-	movea.l a2, a1
-	adda.w  d5, a1
-	adda.w  d5, a1
-
-	move.w  (a1), d0
-	add.w   d4, d0
-	add.w   d1, d0
-
-	add.w   d0, d0
-	movea.l a4, a3
-	adda.w  d0, a3
-
-	; Write tilemap entry
-	move.w  (a3), (a0)
-
-	addq.w  #4, d4
-	cmp.w   d3, d4
-	bne.s   .next_column
-
-	addq.w  #1, d5
-	moveq   #0, d4
-
-.next_column:
-	dbf     d6, .column_loop
-
-	addq.w  #1, d1
-	cmpi.w  #3, d1
-	bne.s   .next_row
-
-	moveq   #0, d1
-	lea     32(a2), a2
-
-.next_row:
-	addq.w  #2, d2
-	dbf     d7, .row_loop
-
-	; Reset VDP autoincrement to 2
-	move.w  #$8F02, 4(a0)
-
-	rts
-
-; ------------------------------------------------------------------------------
-
-draw_all_columns:
-	; Use a6 to keep track of the column to be drawn (because no data
-	; registers are available)
-	suba.l  a6, a6
-
-.columns_loop:
-	move.w  (RAM_col32).w, d0
-	add.w   a6, d0
-
-	lea     (DATA_lut_mod3).w, a0
-	adda.w  d0, a0
-	moveq   #0, d1
-	move.b  (a0), d1
-
-	lea     (DATA_lut_div3).w, a0
-	adda.w  d0, a0
-
-	moveq   #0, d2
-	move.b  (a0), d2
-	add.w   d2, d2
-	add.w   d2, d2
-	add.w   d1, d2
-
-	add.w   d0, d0
-	add.w   d0, d0
-	andi.w  #$3F, d0
-
-	move.w  d0, (RAM_draw_col_plane).w
-	move.w  d1, (RAM_draw_col_tiles).w
-
-	move.w  d2, d0
-	bsr     get_column_blocks
-	bsr     draw_column
-
-	addq.w  #1, a6
-	cmpa.w  #16, a6
-	blo.s   .columns_loop
-
 	rts
 
 ; ------------------------------------------------------------------------------
