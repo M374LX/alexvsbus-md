@@ -1205,27 +1205,28 @@ draw_column:
 ; ------------------------------------------------------------------------------
 
 prepare_draw_column:
+	; Store d0 modulo 3 in d1
+	moveq   #0, d1
 	lea     (DATA_lut_mod3).w, a0
 	adda.w  d0, a0
-	moveq   #0, d1
 	move.b  (a0), d1
 
+	; Store d0 divided by 3 in d2 (integer part only)
+	moveq   #0, d2
 	lea     (DATA_lut_div3).w, a0
 	adda.w  d0, a0
-
-	moveq   #0, d2
 	move.b  (a0), d2
-	add.w   d2, d2
-	add.w   d2, d2
-	add.w   d1, d2
+
+	move.w  d1, (RAM_draw_col_tiles).w
 
 	add.w   d0, d0
 	add.w   d0, d0
 	andi.w  #$3F, d0
-
 	move.w  d0, (RAM_draw_col_plane).w
-	move.w  d1, (RAM_draw_col_tiles).w
 
+	add.w   d2, d2
+	add.w   d2, d2
+	add.w   d1, d2
 	move.w  d2, d0
 
 	; Fallthrough
