@@ -1224,10 +1224,10 @@ prepare_draw_column:
 	andi.w  #$3F, d0
 	move.w  d0, (RAM_draw_col_plane).w
 
-	add.w   d2, d2
-	add.w   d2, d2
-	add.w   d1, d2
 	move.w  d2, d0
+	add.w   d0, d0
+	add.w   d0, d0
+	add.w   d1, d0
 
 	; Fallthrough
 
