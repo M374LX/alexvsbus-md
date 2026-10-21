@@ -1238,10 +1238,6 @@ prepare_draw_column:
 ; Input:
 ; d0 - column number
 get_column_blocks:
-	; Bit 16 determines whether it is the first (0) or second (1) column
-	; being processed; we clear it because we start with the first column
-	bclr.l  #16, d0
-
 	lea     (RAM_level_block_buffer).w, a0
 
 	; Use the default blocks if it is the ending sequence or the column
@@ -1254,7 +1250,10 @@ get_column_blocks:
 	lea     (DATA_level_column_hole_blocks).w, a4
 	movea.l (RAM_ptr_level_columns).w, a5
 
-.next_column:
+	; Number of columns to process minus one
+	moveq   #(2-1), d7
+
+.columns_loop:
 	movea.l a5, a1
 	adda.w  d0, a1
 
@@ -1272,19 +1271,19 @@ get_column_blocks:
 
 	; Set the blocks for the floor and below it according to the hole type
 	adda.w  #(9-4+2)*2, a2
-	move.w  #(6-1), d7
+	move.w  #(6-1), d6
 .floor_loop:
 	moveq   #0, d1
 	move.b  (a1), d1
 	andi.w  #$38, d1
-	add.w   d7, d1
+	add.w   d6, d1
 
 	movea.l a4, a3
 	adda.w  d1, a3
 	adda.w  d1, a3
 	move.w  (a3), -(a2)
 
-	dbf     d7, .floor_loop
+	dbf     d6, .floor_loop
 
 	; Check if there is a horizontal rope
 	move.b  (a1), d1
@@ -1294,9 +1293,9 @@ get_column_blocks:
 .no_horizontal_rope:
 
 	; Determine number of crates in the column
-	moveq   #0, d7
-	move.b  (a1), d7
-	andi.w  #7, d7
+	moveq   #0, d6
+	move.b  (a1), d6
+	andi.w  #7, d6
 
 	; Skip if there are no crates
 	beq.s   .no_crates
@@ -1309,21 +1308,16 @@ get_column_blocks:
 	move.w  #($17*16), d2
 
 	; Add the corresponding number of crates
-	subq.w  #1, d7
+	subq.w  #1, d6
 .crates_loop:
 	move.w  d2, -(a2)
-	dbf     d7, .crates_loop
+	dbf     d6, .crates_loop
 .no_crates:
 
-	; Finish if we have done the second column
-	btst.l  #16, d0
-	bne.s   .ret
-
-	; Otherwise, move to the second column
-	bset.l  #16, d0
+	; Move to the next column
 	addq.w  #1, d0
 	lea     32(a0), a0
-	bra.s   .next_column
+	dbf     d7, .columns_loop
 
 .default_blocks:
 	; The default blocks are (0, 1, 2, 3, 4, 5)
