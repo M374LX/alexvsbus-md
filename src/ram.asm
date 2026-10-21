@@ -107,15 +107,12 @@ RAM_level_block_buffer:         equ $FFFF8100
 RAM_vehicle_buffer:             equ $FFFF8800
 RAM_sprite_buffer:              equ $FFFF8A00
 
-RAM_col32:                      equ $FFFF8E00
-RAM_col32_prev:                 equ $FFFF8E02
-RAM_col32_tiles:                equ $FFFF8E04
-RAM_col24:                      equ $FFFF8E06
-RAM_draw_col_tiles:             equ $FFFF8E08
-RAM_draw_col_plane:             equ $FFFF8E0A
-
-RAM_draw_offset_x:              equ $FFFF8E0C
-RAM_draw_offset_y:              equ $FFFF8E0E
+RAM_draw_offset_x:              equ $FFFF8E00
+RAM_draw_offset_y:              equ $FFFF8E02
+RAM_col32:                      equ $FFFF8E04
+RAM_col32_prev:                 equ $FFFF8E06
+RAM_col32_tiles:                equ $FFFF8E08
+RAM_col24:                      equ $FFFF8E0A
 
 ; RAM area that is cleared when starting a level
 RAM_play_clear_start:           equ $FFFF9000

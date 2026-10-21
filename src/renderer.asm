@@ -1109,7 +1109,6 @@ draw_all_columns:
 	move.w  (RAM_col32).w, d0
 	add.w   a6, d0
 
-	bsr     prepare_draw_column
 	bsr.s   draw_column
 
 	addq.w  #1, a6
@@ -1127,36 +1126,57 @@ draw_one_column:
 	addi.w  #14, d0 ; Right column
 .left_column:
 
-	bsr.s   prepare_draw_column
-
 	; Fallthrough
 
 ; ------------------------------------------------------------------------------
 
 draw_column:
+	; Find the upper half of the VDP command to draw on the corresponding
+	; plane B column and store it in d3
+	move.w  d0, d3
+	andi.w  #$0F, d3
+	add.w   d3, d3
+	add.w   d3, d3
+	addi.w  #(18*64), d3
+	add.w   d3, d3
+	ori.w   #$6000, d3
+
+	; Store d0 modulo 3 in d4
+	moveq   #0, d4
+	lea     (DATA_lut_mod3).w, a0
+	adda.w  d0, a0
+	move.b  (a0), d4
+
+	; Divide d0 by 3 (integer part only)
+	lea     (DATA_lut_div3).w, a0
+	adda.w  d0, a0
+	move.b  (a0), d0
+	andi.w  #$FF, d0
+
+	add.w   d0, d0
+	add.w   d0, d0
+	add.w   d4, d0
+	bsr.s   get_column_blocks
+
 	lea     VDP_DATA, a0
 	lea     (RAM_level_block_buffer).w, a2
 	lea     (DATA_level_blocks).w, a4
 
-	move.w  (RAM_draw_col_tiles).w, d1
-
-	move.w  #(18*64), d2
-	add.w   (RAM_draw_col_plane).w, d2
-	add.w   d2, d2
-	ori.w   #$6000, d2
-
 	; Height of a level block in tiles (3) multiplied by 4
-	moveq   #(3*4), d3
+	moveq   #(3*4), d2
+
+	; Draw four rows of tiles
+	moveq   #(4-1), d7
 
 	; Set VDP autoincrement to (64*2)
 	move.w  #$8F00|(64*2), 4(a0)
 
-	moveq   #(4-1), d7
 .row_loop:
-	moveq   #0, d4
+	moveq   #0, d1
 	moveq   #0, d5
 
-	move.w  d2, 4(a0)
+	; Set VDP write address
+	move.w  d3, 4(a0)
 	move.w  #3, 4(a0)
 
 	moveq   #(30-1), d6
@@ -1166,8 +1186,8 @@ draw_column:
 	adda.w  d5, a1
 
 	move.w  (a1), d0
-	add.w   d4, d0
 	add.w   d1, d0
+	add.w   d4, d0
 
 	add.w   d0, d0
 	movea.l a4, a3
@@ -1176,60 +1196,31 @@ draw_column:
 	; Write tilemap entry
 	move.w  (a3), (a0)
 
-	addq.w  #4, d4
-	cmp.w   d3, d4
+	addq.w  #4, d1
+	cmp.w   d2, d1
 	bne.s   .next_column
 
 	addq.w  #1, d5
-	moveq   #0, d4
+	moveq   #0, d1
 
 .next_column:
 	dbf     d6, .column_loop
 
-	addq.w  #1, d1
-	cmpi.w  #3, d1
+	addq.w  #1, d4
+	cmpi.w  #3, d4
 	bne.s   .next_row
 
-	moveq   #0, d1
+	moveq   #0, d4
 	lea     32(a2), a2
 
 .next_row:
-	addq.w  #2, d2
+	addq.w  #2, d3
 	dbf     d7, .row_loop
 
 	; Reset VDP autoincrement to 2
 	move.w  #$8F02, 4(a0)
 
 	rts
-
-; ------------------------------------------------------------------------------
-
-prepare_draw_column:
-	; Store d0 modulo 3 in d1
-	moveq   #0, d1
-	lea     (DATA_lut_mod3).w, a0
-	adda.w  d0, a0
-	move.b  (a0), d1
-
-	; Store d0 divided by 3 in d2 (integer part only)
-	moveq   #0, d2
-	lea     (DATA_lut_div3).w, a0
-	adda.w  d0, a0
-	move.b  (a0), d2
-
-	move.w  d1, (RAM_draw_col_tiles).w
-
-	add.w   d0, d0
-	add.w   d0, d0
-	andi.w  #$3F, d0
-	move.w  d0, (RAM_draw_col_plane).w
-
-	move.w  d2, d0
-	add.w   d0, d0
-	add.w   d0, d0
-	add.w   d1, d0
-
-	; Fallthrough
 
 ; ------------------------------------------------------------------------------
 
