@@ -45,15 +45,15 @@
 #define PARKED_CAR_Y 208
 #define PARKED_TRUCK_Y 136
 
-//Level column types
+//Level column hole types
 enum {
-	LVLCOL_NORMAL_FLOOR = 0,
-	LVLCOL_DEEP_HOLE_LEFT = 1,
-	LVLCOL_DEEP_HOLE_MIDDLE = 2,
-	LVLCOL_DEEP_HOLE_RIGHT = 3,
-	LVLCOL_PASSAGEWAY_LEFT = 4,
-	LVLCOL_PASSAGEWAY_MIDDLE = 5,
-	LVLCOL_PASSAGEWAY_RIGHT = 6,
+	HOLE_NONE = 0,
+	HOLE_DEEP_LEFT = 1,
+	HOLE_DEEP_MIDDLE = 2,
+	HOLE_DEEP_RIGHT = 3,
+	HOLE_PASSAGEWAY_LEFT = 4,
+	HOLE_PASSAGEWAY_MIDDLE = 5,
+	HOLE_PASSAGEWAY_RIGHT = 6,
 };
 
 //Parked vehicle types
@@ -104,7 +104,7 @@ static uint8_t  num_springs;
 static uint8_t  num_triggers;
 
 static struct {
-	uint16_t type;
+	uint16_t hole_type;
 	uint16_t num_crates;
 	bool     has_hydrant;
 	bool     has_rope;
@@ -262,11 +262,11 @@ static void add_deep_hole(int x, int w)
 	int i;
 
 	for (i = 1; i < w - 1; i++) {
-		columns[x + i].type = LVLCOL_DEEP_HOLE_MIDDLE;
+		columns[x + i].hole_type = HOLE_DEEP_MIDDLE;
 	}
 
-	columns[x].type = LVLCOL_DEEP_HOLE_LEFT;
-	columns[x + w - 1].type = LVLCOL_DEEP_HOLE_RIGHT;
+	columns[x].hole_type = HOLE_DEEP_LEFT;
+	columns[x + w - 1].hole_type = HOLE_DEEP_RIGHT;
 }
 
 static void add_passageway(int x, int w, bool has_arrow)
@@ -278,11 +278,11 @@ static void add_passageway(int x, int w, bool has_arrow)
 	}
 
 	for (i = 1; i < w - 1; i++) {
-		columns[x + i].type = LVLCOL_PASSAGEWAY_MIDDLE;
+		columns[x + i].hole_type = HOLE_PASSAGEWAY_MIDDLE;
 	}
 
-	columns[x].type = LVLCOL_PASSAGEWAY_LEFT;
-	columns[x + w - 1].type = LVLCOL_PASSAGEWAY_RIGHT;
+	columns[x].hole_type = HOLE_PASSAGEWAY_LEFT;
+	columns[x + w - 1].hole_type = HOLE_PASSAGEWAY_RIGHT;
 
 	passageways[num_passageways].left  = x * 24;
 	passageways[num_passageways].right = (x + w) * 24;
@@ -482,25 +482,25 @@ static void add_solids()
 	for (i = 1; i < num_columns; i++) {
 		int x;
 
-		switch (columns[i].type) {
-			case LVLCOL_NORMAL_FLOOR:
+		switch (columns[i].hole_type) {
+			case HOLE_NONE:
 				solids[num_solids - 1].right += LEVEL_BLOCK_SIZE;
 				break;
 
-			case LVLCOL_DEEP_HOLE_LEFT:
+			case HOLE_DEEP_LEFT:
 				solids[num_solids - 1].right += 12;
 				break;
 
-			case LVLCOL_DEEP_HOLE_RIGHT:
+			case HOLE_DEEP_RIGHT:
 				x = (LEVEL_BLOCK_SIZE * i) + 14;
 				add_solid(SOL_FULL, x, 264, 10, 80);
 				break;
 
-			case LVLCOL_PASSAGEWAY_LEFT:
+			case HOLE_PASSAGEWAY_LEFT:
 				solids[num_solids - 1].right += 6;
 				break;
 
-			case LVLCOL_PASSAGEWAY_RIGHT:
+			case HOLE_PASSAGEWAY_RIGHT:
 				x = (LEVEL_BLOCK_SIZE * (i + 1));
 				add_solid(SOL_FULL, x, 264, 0, 80);
 				break;
@@ -617,7 +617,7 @@ static bool read_file(FILE* fp)
 	num_solids = 0;
 
 	for (i = 0; i < MAX_COLUMNS; i++) {
-		columns[i].type = LVLCOL_NORMAL_FLOOR;
+		columns[i].hole_type = HOLE_NONE;
 	}
 
 	for (i = 0; i < MAX_PASSAGEWAYS; i++) {
@@ -736,12 +736,15 @@ static bool read_file(FILE* fp)
 
 static int encode_column(int col)
 {
-	int type = columns[col].type;
+	int hole_type = columns[col].hole_type;
 	int num_crates = columns[col].num_crates;
 	bool has_hydrant = columns[col].has_hydrant;
 	bool has_rope = columns[col].has_rope;
 
-	return (has_rope ? 0x80 : 0) | (has_hydrant ? 0x40 : 0) | (type << 3) | num_crates;
+	return (has_rope ? 0x80 : 0) |
+			(has_hydrant ? 0x40 : 0) |
+			(hole_type << 3) |
+			num_crates;
 }
 
 static void out8(FILE* fp, int val)
