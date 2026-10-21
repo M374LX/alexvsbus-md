@@ -19,7 +19,7 @@ DATA_vehicle_types:
 	dc.w    $E000
 	dc.b    16-26
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -27,7 +27,7 @@ DATA_vehicle_types:
 	dc.w    $C000
 	dc.b    16-26
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -35,7 +35,7 @@ DATA_vehicle_types:
 	dc.w    $A000
 	dc.b    16-26
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -43,7 +43,7 @@ DATA_vehicle_types:
 	dc.w    $A000
 	dc.b    16-17
 	dc.b    16
-	dc.b    35
+	dc.b    TRUCK_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -51,7 +51,7 @@ DATA_vehicle_types:
 	dc.w    $6000
 	dc.b    16-16
 	dc.b    15
-	dc.b    50
+	dc.b    BUS_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -59,7 +59,7 @@ DATA_vehicle_types:
 	dc.w    $6000
 	dc.b    16-23
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -67,7 +67,7 @@ DATA_vehicle_types:
 	dc.w    $4000
 	dc.b    16-23
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 
@@ -75,7 +75,7 @@ DATA_vehicle_types:
 	dc.w    $2000
 	dc.b    16-23
 	dc.b    7
-	dc.b    16
+	dc.b    CAR_WIDTH_TILES
 	dc.b    0
 	dc.w    0
 

@@ -197,6 +197,11 @@ VEH_ENDING_CAR_BLUE:            equ 6
 VEH_ENDING_CAR_SILVER:          equ 7
 VEH_ENDING_CAR_YELLOW:          equ 8
 
+; Width of each vehicle type in tiles
+CAR_WIDTH_TILES:                equ 16
+TRUCK_WIDTH_TILES:              equ 35
+BUS_WIDTH_TILES:                equ 50
+
 ; Maximum numbers
 MAX_GUSHES:                     equ 32
 MAX_MOVING_PEELS:               equ 2

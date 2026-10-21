@@ -1402,10 +1402,10 @@ update_vehicle_buffer:
 	bge.s   .parked_vehicles_done
 
 	; Determine vehicle width in tiles
-	move.w  #16, d5
+	move.w  #CAR_WIDTH_TILES, d5
 	cmpi.w  #VEH_PARKED_TRUCK, d3
 	bne.s   .not_truck
-	move.w  #35, d5
+	move.w  #TRUCK_WIDTH_TILES, d5
 .not_truck:
 
 	; If the current vehicle is too far to the left, move to the next one
@@ -1429,7 +1429,7 @@ update_vehicle_buffer:
 	add.w   d0, d4
 
 	moveq   #VEH_BUS, d3
-	moveq   #50, d5 ; Width of the bus in tiles
+	moveq   #BUS_WIDTH_TILES, d5
 
 	; If the bus is too far to the right, skip
 	cmpi.w  #60, d4
@@ -1443,7 +1443,7 @@ update_vehicle_buffer:
 	beq.s   .ending_cars_done
 
 	moveq   #VEH_ENDING_CAR_BLUE, d3 ; Start with a blue car
-	moveq   #16, d5 ; Width of a car in tiles
+	moveq   #CAR_WIDTH_TILES, d5
 
 	addi.w  #(400/8), d4
 
