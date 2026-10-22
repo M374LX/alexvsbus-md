@@ -1230,14 +1230,6 @@ draw_column:
 ; d0 - column number
 get_column_blocks:
 	lea     (RAM_level_block_buffer).w, a0
-
-	; Use the default blocks if it is the ending sequence or the column
-	; number is greater than the number of level columns in the level
-	btst.b  #7, (RAM_play_flags).w
-	bne.s   .default_blocks
-	cmp.w   (RAM_level_num_columns).w, d0
-	bge.s   .default_blocks
-
 	lea     (DATA_level_column_hole_blocks).w, a4
 	movea.l (RAM_ptr_level_columns).w, a5
 
@@ -1245,9 +1237,6 @@ get_column_blocks:
 	moveq   #(2-1), d7
 
 .columns_loop:
-	movea.l a5, a1
-	adda.w  d0, a1
-
 	; Set the blocks of the first four rows to (0, 1, 2, 3)
 	movea.l a0, a2
 	moveq   #0, d1
@@ -1258,10 +1247,23 @@ get_column_blocks:
 	add.w   d2, d1
 	move.w  d1, (a2)+
 	add.w   d2, d1
-	move.w  d1, (a2)
+	move.w  d1, (a2)+
+
+	; Use the default floor blocks if it is the ending sequence or the
+	; column number is greater than the number of columns in the level
+	btst.b  #7, (RAM_play_flags).w
+	bne.s   .default_floor_blocks
+	cmp.w   (RAM_level_num_columns).w, d0
+	bge.s   .default_floor_blocks
+
+	movea.l a5, a1
+	adda.w  d0, a1
+
+	; Point a2 to the location within the buffer immediately after the last
+	; row
+	adda.w  #(9-4+1)*2, a2
 
 	; Set the blocks for the floor and below it according to the hole type
-	adda.w  #(9-4+2)*2, a2
 	move.w  #(6-1), d6
 .floor_loop:
 	moveq   #0, d1
@@ -1289,7 +1291,7 @@ get_column_blocks:
 	andi.w  #7, d6
 
 	; Skip if there are no crates
-	beq.s   .no_crates
+	beq.s   .next_column
 
 	; Point a2 to the lowest row that can contain a crate
 	movea.l a0, a2
@@ -1303,48 +1305,21 @@ get_column_blocks:
 .crates_loop:
 	move.w  d2, -(a2)
 	dbf     d6, .crates_loop
-.no_crates:
 
-	; Move to the next column
+	bra.s   .next_column
+
+.default_floor_blocks:
+	; Use block 4 and then 5 for the floor
+	add.w   d2, d1
+	move.w  d1, (a2)+
+	add.w   d2, d1
+	move.w  d1, (a2)+
+
+.next_column:
 	addq.w  #1, d0
 	lea     32(a0), a0
 	dbf     d7, .columns_loop
 
-.default_blocks:
-	; The default blocks are (0, 1, 2, 3, 4, 5)
-
-	moveq   #16, d2
-
-	; First column
-	moveq   #0, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-
-	; Second column
-	lea     20(a0), a0
-	moveq   #0, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-	add.w   d2, d1
-	move.w  d1, (a0)+
-
-.ret:
 	rts
 
 ; ------------------------------------------------------------------------------
