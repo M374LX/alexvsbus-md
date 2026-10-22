@@ -1221,96 +1221,94 @@ draw_column:
 ; d0 - column number
 get_column_blocks:
 	lea     (RAM_level_block_buffer).w, a0
-	lea     (DATA_level_column_hole_blocks).w, a4
-	movea.l (RAM_ptr_level_columns).w, a5
 
-	; Number of columns to process minus one
-	moveq   #(2-1), d7
+	; Bit #16 of d0 is cleared when processing the first column and set
+	; when processing the second
+	bclr.l  #16, d0
 
 .columns_loop:
-	; Set the blocks of the first four rows to (0, 1, 2, 3)
-	movea.l a0, a2
+	; Set the blocks in the first six rows to (0, 1, 2, 3, 4, 5)
 	moveq   #0, d1
 	moveq   #16, d2
-	move.w  d1, (a2)+
+	move.w  d1, (a0)+
 	add.w   d2, d1
-	move.w  d1, (a2)+
+	move.w  d1, (a0)+
 	add.w   d2, d1
-	move.w  d1, (a2)+
+	move.w  d1, (a0)+
 	add.w   d2, d1
-	move.w  d1, (a2)+
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
+	add.w   d2, d1
+	move.w  d1, (a0)+
 
-	; Use the default floor blocks if it is the ending sequence or the
-	; column number is greater than the number of columns in the level
+	; The current column is done if it is the ending sequence or the column
+	; number is beyond the last column in the level
 	btst.b  #7, (RAM_play_flags).w
-	bne.s   .default_floor_blocks
+	bne.s   .next_column
 	cmp.w   (RAM_level_num_columns).w, d0
-	bge.s   .default_floor_blocks
+	bge.s   .next_column
 
-	movea.l a5, a1
+	; Point a1 to the level column to be read
+	movea.l (RAM_ptr_level_columns).w, a1
 	adda.w  d0, a1
 
-	; Point a2 to the location within the buffer immediately after the last
-	; row
-	adda.w  #(9-4+1)*2, a2
-
-	; Set the blocks for the floor and below it according to the hole type
-	move.w  #(6-1), d6
-.floor_loop:
-	moveq   #0, d1
+	; Retrieve hole type
 	move.b  (a1), d1
 	andi.w  #$38, d1
-	add.w   d6, d1
+	add.w   d1, d1
 
-	movea.l a4, a3
-	adda.w  d1, a3
-	adda.w  d1, a3
-	move.w  (a3), -(a2)
+	; Point a2 to the corresponding hole type within
+	; DATA_level_column_hole_blocks
+	lea     (DATA_level_column_hole_blocks).w, a2
+	adda.w  d1, a2
 
-	dbf     d6, .floor_loop
+	; Point a0 to the topmost row affected by the column's hole type
+	subq.w  #(2*2), a0
+
+	; Read six blocks (two per longword) into the buffer
+	move.l  (a2)+, (a0)+
+	move.l  (a2)+, (a0)+
+	move.l  (a2)+, (a0)+
 
 	; Check if there is a horizontal rope
+	suba.w  #(10*2), a0
 	move.b  (a1), d1
 	btst.l  #7, d1
 	beq.s   .no_horizontal_rope
 	move.w  #($16*16), (a0)
 .no_horizontal_rope:
 
-	; Determine number of crates in the column
-	moveq   #0, d6
-	move.b  (a1), d6
-	andi.w  #7, d6
+	; Retrieve the number of crates in the column
+	move.b  (a1), d1
+	andi.w  #7, d1
 
 	; Skip if there are no crates
 	beq.s   .next_column
 
-	; Point a2 to the lowest row that can contain a crate
-	movea.l a0, a2
-	adda.w  #(5*2), a2
+	; Point a0 to the lowest row that can contain a crate
+	adda.w  #(5*2), a0
 
 	; $17 is the number of the level block with a crate
 	move.w  #($17*16), d2
 
 	; Add the corresponding number of crates
-	subq.w  #1, d6
+	subq.w  #1, d1
 .crates_loop:
-	move.w  d2, -(a2)
-	dbf     d6, .crates_loop
-
-	bra.s   .next_column
-
-.default_floor_blocks:
-	; Use block 4 and then 5 for the floor
-	add.w   d2, d1
-	move.w  d1, (a2)+
-	add.w   d2, d1
-	move.w  d1, (a2)+
+	move.w  d2, -(a0)
+	dbf     d1, .crates_loop
 
 .next_column:
-	addq.w  #1, d0
-	lea     32(a0), a0
-	dbf     d7, .columns_loop
+	; If we have processed the second column, we are done
+	bchg.l  #16, d0
+	bne.s   .ret
 
+	; Otherwise, move to the second column
+	addq.w  #1, d0
+	lea     (RAM_level_block_buffer+(16*2)).w, a0
+	bra.s   .columns_loop
+
+.ret:
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -1776,16 +1774,17 @@ add_play_sprites:
 ; Add foreground sprites for holes (including passageways) ;
 ;----------------------------------------------------------;
 
-	move.w  #16-1, d7 ; Number of level columns to check
+	; Number of level columns to check
+	move.w  #16-1, d7
+
+	move.w  (RAM_col24).w, d0
 
 	; Store initial column address in a5
 	movea.l (RAM_ptr_level_columns).w, a5
-	move.w  (RAM_col24).w, d0
 	adda.w  d0, a5
 
 	; Calculate X position of the first visible level column in pixels
 	; (that is, multiply it by 24) and store the result in d0
-	move.w  (RAM_col24).w, d0
 	move.w  d0, d1
 	add.w   d0, d0
 	add.w   d1, d0
