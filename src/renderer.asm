@@ -2834,13 +2834,11 @@ update_scroll:
 	; Set VRAM address for horizontal scroll ($A800)
 	move.l  #$68000002, 4(a0)
 
-	move.w  (RAM_bus_x).w, d1
-	sub.w   (RAM_bus_init_x).w, d1
-
 	; Plane A
 	move.w  #512, d0
 	sub.w   (RAM_draw_offset_x).w, d0
-	add.w   d1, d0
+	add.w   (RAM_bus_x).w, d0
+	sub.w   (RAM_bus_init_x).w, d0
 	andi.w  #511, d0
 	move.w  d0, (a0)
 
