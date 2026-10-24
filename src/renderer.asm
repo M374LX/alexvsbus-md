@@ -94,9 +94,9 @@ handle_screen_change:
 	; Clear planes A and B
 	move.l  #$40000003, 4(a0)
 	move.w  #(64*64*2)-1, d7
-.clear_loop:
+.planes_clear_loop:
 	move.w  d0, (a0)
-	dbf     d7, .clear_loop
+	dbf     d7, .planes_clear_loop
 
 	; Clear window
 	move.l  #$70000002, 4(a0)
@@ -863,8 +863,8 @@ scr_init_play:
 	move.w  #$8000|'M', (a0)
 	move.w  #$8000|'E', (a0)
 
-	clr.w   (RAM_col32).w
-	clr.w   (RAM_col32_prev).w
+	clr.w   (RAM_col32_tiles).w
+	clr.w   (RAM_col32_tiles_prev).w
 
 	rts
 
@@ -878,10 +878,8 @@ scr_draw_play:
 	move.w  (RAM_camera_x).w, d0
 	move.w  d0, (RAM_draw_offset_x).w
 
-	lsr.w   #5, d0
-	move.w  d0, (RAM_col32).w
-	add.w   d0, d0
-	add.w   d0, d0
+	lsr.w   #3, d0
+	andi.w  #$FFFC, d0
 	move.w  d0, (RAM_col32_tiles).w
 
 	; 510 is the multiple of 3 that is closest to 512 but still lower
@@ -918,10 +916,10 @@ scr_draw_play:
 	tst.b   (RAM_force_full_redraw).w
 	bne.s   .redraw_mode_full
 
-	move.w  (RAM_col32).w, d0
-	sub.w   (RAM_col32_prev).w, d0
+	move.w  (RAM_col32_tiles).w, d0
+	sub.w   (RAM_col32_tiles_prev).w, d0
 
-	cmpi.w  #4, d0
+	cmpi.w  #(4*4), d0
 	bge.s   .redraw_mode_full
 	tst.w   d0
 	bne.s   .redraw_mode_vehicles_and_column
@@ -944,7 +942,7 @@ scr_draw_play:
 	bset.b  #2, (a0) ; Moved to the right
 .redraw_mode_done:
 
-	move.w  (RAM_col32).w, (RAM_col32_prev).w
+	move.w  (RAM_col32_tiles).w, (RAM_col32_tiles_prev).w
 	clr.b   (RAM_force_full_redraw).w
 
 	bsr     update_vehicle_buffer
@@ -966,6 +964,7 @@ scr_draw_play:
 
 .redraw_full:
 	; Set sky color
+	lea     VDP_DATA, a0
 	lea     (DATA_sky_colors).w, a1
 	moveq   #0, d0
 	move.b  (RAM_level_sky_color).w, d0
@@ -983,13 +982,13 @@ scr_draw_play:
 	moveq   #0, d0
 	btst.b  #2, (RAM_redraw_mode).w
 	beq.s   .moved_left
-	moveq   #56, d0
+	moveq   #(14*4), d0
 .moved_left:
 
 .redraw_only_vehicles:
 	tst.l   (RAM_bus_xvel).w
 	beq.s   .bus_not_moving
-	moveq   #60, d0
+	moveq   #(15*4), d0
 .bus_not_moving:
 
 	moveq   #(4-1), d7
@@ -1097,13 +1096,13 @@ draw_all_columns:
 	suba.l  a6, a6
 
 .columns_loop:
-	move.w  (RAM_col32).w, d0
+	move.w  (RAM_col32_tiles).w, d0
 	add.w   a6, d0
 
 	bsr.s   draw_column
 
-	addq.w  #1, a6
-	cmpa.w  #16, a6
+	addq.w  #4, a6
+	cmpa.w  #(16*4), a6
 	blo.s   .columns_loop
 
 	rts
@@ -1111,10 +1110,10 @@ draw_all_columns:
 ; ------------------------------------------------------------------------------
 
 draw_one_column:
-	move.w  (RAM_col32).w, d0
+	move.w  (RAM_col32_tiles).w, d0
 	btst.b  #2, (RAM_redraw_mode).w
 	beq.s   .left_column
-	addi.w  #14, d0 ; Right column
+	addi.w  #(14*4), d0 ; Right column
 .left_column:
 
 	; Fallthrough
@@ -1125,12 +1124,12 @@ draw_column:
 	; Find the upper half of the VDP command to draw on the corresponding
 	; plane B column and store it in d3
 	move.w  d0, d3
-	andi.w  #$0F, d3
-	add.w   d3, d3
-	add.w   d3, d3
+	andi.w  #$3F, d3
 	addi.w  #(18*64), d3
 	add.w   d3, d3
 	ori.w   #$6000, d3
+
+	lsr.w   #2, d0
 
 	; Store d0 modulo 3 in d4
 	moveq   #0, d4
