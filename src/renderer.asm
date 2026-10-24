@@ -80,22 +80,46 @@ renderer_draw:
 ; ------------------------------------------------------------------------------
 
 handle_screen_change:
-	; Necessary to avoid graphical glitches
 	bsr     wait_vblank
 
+	lea     VDP_DATA, a0
+	moveq   #0, d0
+
 	; Disable display
-	move.w  #$8124, VDP_CTRL
+	move.w  #$8124, 4(a0)
 
 	; Hide window
-	move.w  #$9200, VDP_CTRL
+	move.w  #$9200, 4(a0)
 
-	bsr     clear_planes
+	; Clear planes A and B
+	move.l  #$40000003, 4(a0)
+	move.w  #(64*64*2)-1, d7
+.clear_loop:
+	move.w  d0, (a0)
+	dbf     d7, .clear_loop
 
-	moveq   #0, d0
+	; Clear window
+	move.l  #$70000002, 4(a0)
+	move.w  #(64*2)-1, d7
+.window_clear_loop:
+	move.w  d0, (a0)
+	dbf     d7, .window_clear_loop
+
+	; Reset horizontal offsets
+	move.l  #$68000002, 4(a0)
+	move.w  d0, (a0)
+	move.w  d0, (a0)
+
+	; Reset vertical offsets
+	move.l  #$40000010, 4(a0)
+	move.w  d0, (a0)
+	move.w  d0, (a0)
+
 	move.b  (RAM_screen_type_next).w, d0
 	move.b  d0, (RAM_screen_type).w
 	clr.b   (RAM_screen_type_next).w
 
+	; Jump to the next screen's initialization subroutine
 	add.w   d0, d0
 	add.w   d0, d0
 	jmp     .scr_jump_table(pc, d0.w)
@@ -225,39 +249,6 @@ renderer_handle_wipe:
 	bclr.l  #6, d0 ; Disable display
 .no_blanking:
 	move.w  d0, VDP_CTRL
-
-	rts
-
-; ------------------------------------------------------------------------------
-
-; Clears VDP planes (A, B, and Window) and resets scroll offsets to zero
-clear_planes:
-	lea     VDP_DATA, a0
-	moveq   #0, d0
-
-	; Clear planes A and B
-	move.l  #$40000003, 4(a0)
-	move.w  #(64*64*2)-1, d7
-.clear_loop:
-	move.w  d0, (a0)
-	dbf     d7, .clear_loop
-
-	; Clear window
-	move.l  #$70000002, 4(a0)
-	move.w  #(64*2)-1, d7
-.window_clear_loop:
-	move.w  d0, (a0)
-	dbf     d7, .window_clear_loop
-
-	; Reset horizontal offsets
-	move.l  #$68000002, 4(a0)
-	move.w  d0, (a0)
-	move.w  d0, (a0)
-
-	; Reset vertical offsets
-	move.l  #$40000010, 4(a0)
-	move.w  d0, (a0)
-	move.w  d0, (a0)
 
 	rts
 
