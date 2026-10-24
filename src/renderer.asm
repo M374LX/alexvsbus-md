@@ -1722,7 +1722,7 @@ add_play_sprites:
 
 	; Skip signs to the left of the visible area
 	cmpi.w  #-32, d1
-	ble.s  .overhead_sign_bases_next
+	ble.s   .overhead_sign_bases_next
 
 	; If the sign is to the right of the visible area, then there are no
 	; more visible signs, as the signs are always sorted by X position
@@ -2012,14 +2012,14 @@ add_play_sprites:
 ; Add sprites for cutscene objects that are not in the bus ;
 ;----------------------------------------------------------;
 
-	lea    (RAM_cutscene_objs+32).w, a2
-	lea    (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
-	moveq  #(MAX_CUTSCENE_OBJECTS-1), d7
+	lea     (RAM_cutscene_objs+32).w, a2
+	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
+	moveq   #(MAX_CUTSCENE_OBJECTS-1), d7
 .out_cutscene_objs_loop:
-	tst.b  (a2)
-	beq.s  .next_out_cutscene_obj
-	tst.b  1(a2)
-	bne.s  .next_out_cutscene_obj
+	tst.b   (a2)
+	beq.s   .next_out_cutscene_obj
+	tst.b   1(a2)
+	bne.s   .next_out_cutscene_obj
 
 	bsr     add_spritemap_cutscene_obj
 
@@ -2809,14 +2809,14 @@ add_play_sprites:
 ; Add sprites for cutscene objects that are in the bus ;
 ;------------------------------------------------------;
 
-	lea    (RAM_cutscene_objs+32).w, a2
-	lea    (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
-	moveq  #(MAX_CUTSCENE_OBJECTS-1), d7
+	lea     (RAM_cutscene_objs+32).w, a2
+	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
+	moveq   #(MAX_CUTSCENE_OBJECTS-1), d7
 .in_cutscene_objs_loop:
-	tst.b  (a2)
-	beq.s  .next_in_cutscene_obj
-	tst.b  1(a2)
-	beq.s  .next_in_cutscene_obj
+	tst.b   (a2)
+	beq.s   .next_in_cutscene_obj
+	tst.b   1(a2)
+	beq.s   .next_in_cutscene_obj
 
 	bsr.s   add_spritemap_cutscene_obj
 
