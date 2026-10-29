@@ -1420,9 +1420,9 @@ handle_player_interactions:
 	moveq   #4, d3 ; Right and bottom offsets of coin bounding box
 
 .coins_loop:
-	; Ignore inexistent coins
+	; Skip collected coins
 	tst.w   (a2)
-	beq     .next_coin
+	ble     .next_coin
 
 	; Check bounding box overlap (X axis)
 	move.w  (RAM_player_x).w, d0
@@ -1460,24 +1460,8 @@ handle_player_interactions:
 	add.w   d0, d0
 	lea     (RAM_coin_sparks).w, a0
 	adda.w  d0, a0
-
-	move.l  #$50, (RAM_score_add).w ; Value to be added to the score (BCD)
-
 	move.w  (a2), (a0)+ ; X
 	move.w  2(a2), (a0) ; Y/gold
-	btst.b  #$7, 2(a2)  ; Is this a gold coin?
-	beq.s   .not_gold   ; If not, branch
-	move.l  #$100, (RAM_score_add).w ; Value to be added to the score (BCD)
-.not_gold:
-
-	; Add score (BCD)
-	lea     (RAM_score+4).w, a0
-	lea     (RAM_score_add+4).w, a1
-	andi.b  #0, ccr
-	abcd.b  -(a1), -(a0)
-	abcd.b  -(a1), -(a0)
-	abcd.b  -(a1), -(a0)
-	abcd.b  -(a1), -(a0)
 
 	; Start coin spark animation
 	moveq   #0, d0
@@ -1491,18 +1475,34 @@ handle_player_interactions:
 
 	move.b  (RAM_next_coin_spark).w, d0
 	addq.b  #1, d0
-	andi.b  #$0F, d0
+	andi.b  #(MAX_COIN_SPARKS-1), d0
 	move.b  d0, (RAM_next_coin_spark).w
 
-	; Remove coin
+	; Remove coin (by clearing its X position)
 	clr.w   (a2)
+
+	; Determine value to add to score
+	move.l  #$50, (RAM_score_add).w
+	btst.b  #$7, 2(a2)  ; Is this a gold coin?
+	beq.s   .not_gold   ; If not, branch
+	move.l  #$100, (RAM_score_add).w
+.not_gold:
+
+	; Add score (BCD)
+	lea     (RAM_score+4).w, a0
+	lea     (RAM_score_add+4).w, a1
+	andi.b  #0, ccr
+	abcd.b  -(a1), -(a0)
+	abcd.b  -(a1), -(a0)
+	abcd.b  -(a1), -(a0)
+	abcd.b  -(a1), -(a0)
 
 .next_coin:
 	addq.w  #4, a2
 	dbf     d7, .coins_loop
 .coins_done:
 
-	; Check if the coin sound effect needs to be played
+	; Play a sound effect if the player character has collected a coin
 	tst.b   d5
 	beq.s   .dont_play_coin_sound
 	moveq   #SFX_COIN, d0
@@ -1517,7 +1517,6 @@ handle_player_interactions:
 .player_state_normal:
 
 	; Handle pushable crates
-	move.b  (RAM_play_input_down).w, d0
 	btst.b  #PLAY_INPUT_RIGHT, (RAM_play_input_down).w
 	bne.s   .dont_reset_crate_push_remaining
 	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
@@ -1534,16 +1533,17 @@ handle_player_interactions:
 	lea     (RAM_pushable_crates).w, a0
 	lea     (RAM_pushable_crate_solids).w, a1
 .pushable_crates_loop:
-	; If the X position of the crate is zero, there are no more crates to
-	; check
+	; If the X position of the crate is zero or negative, there are no more
+	; crates to check
 	tst.w   (a0)
-	beq.s   .pushable_crates_done
+	ble.s   .pushable_crates_done
 
 	; If the crate's "pushed" flag is set, skip it
 	btst.b  #2, 6(a0)
 	bne.s   .next_pushable_crate
 
-	; Check if the point overlaps the solid
+	; If the point at offset (24, 48) from the player character does not
+	; overlap the crate's solid, the player is not pushing the crate
 	cmp.w   (a1), d2
 	blt.s   .pushable_crates_done ; No more crates to check
 	cmp.w   2(a1), d2
@@ -1553,9 +1553,9 @@ handle_player_interactions:
 	cmp.w   6(a1), d3
 	bgt.s   .next_pushable_crate
 
-	; If we got here, the player character is pushing the crate
+	; If we got here, the player is pushing the crate
 	subq.b  #1, (RAM_crate_push_remaining).w
-	bgt.s   .next_pushable_crate
+	bhi.s   .next_pushable_crate
 
 	; Finished pushing the crate
 	move.b  (FPSVAL_0_7_S).w, (RAM_crate_push_remaining).w
@@ -1581,6 +1581,10 @@ handle_player_interactions:
 	lea     (RAM_banana_peels).w, a2
 	subq.w  #1, d7
 .banana_peels_loop:
+	; Skip removed peels
+	tst.l   (a2)
+	ble.s   .next_banana_peel
+
 	; Check overlapping bounding boxes
 	move.w  (RAM_player_x).w, d0
 	addi.w  #(PLAYER_BOX_OFFSET_X+PLAYER_BOX_WIDTH), d0
@@ -1602,26 +1606,23 @@ handle_player_interactions:
 	cmp.w   d1, d0 ; Peel bottom
 	bgt.s   .next_banana_peel
 
-	; Position moving peel
+	; Change player character's state
+	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
+
+	; Make peel move
 	lea     (RAM_moving_peels).w, a0
 	move.w  (a2), (a0)+  ; x
 	clr.w   (a0)+
 	move.w  2(a2), (a0)+ ; y
 	clr.w   (a0)+
-
-	; Make peel inactive (by clearing its X position)
-	clr.w   (a2)
-
-	; Make peel move
-	lea     (RAM_moving_peels+8).w, a0
 	move.l  (FPSVAL_150_PXS).w,  (a0)+ ; xvel
 	move.l  (FPSVAL_M204_PXS).w, (a0)+ ; yvel
 	move.l  (FPSVAL_504_PXSS).w, (a0)+ ; grav
-	clr.w   (a0)+           ; xdest
-	move.w  #500, (a0)      ; ydest (below the Y limit, which is 400)
+	clr.w   (a0)+      ; xdest
+	move.w  #500, (a0) ; ydest (below the Y limit, which is 400)
 
-	; Change player character's state
-	move.b  #PLAYER_STATE_SLIP, (RAM_player_state).w
+	; Remove the peel (by clearing its X position)
+	clr.w   (a2)
 
 	; Play slip sound effect and stop processing further interactions
 	moveq   #SFX_SLIP, d0
@@ -1632,7 +1633,7 @@ handle_player_interactions:
 	dbf     d7, .banana_peels_loop
 .banana_peels_done:
 
-	; Use d7 to count the gushes yet to be processed
+	; Use d7 to count the gushes (including gush cracks) yet to be processed
 	moveq   #0, d7
 	move.b  (RAM_num_gushes).w, d7
 
@@ -1671,11 +1672,11 @@ handle_player_interactions:
 	beq.s   .gush_play_sfx
 
 	; Otherwise, convert it into a normal gush
-	move.w  #266, 2(a2)  ; y
-	move.l  (FPSVAL_M144_PXS).w, 6(a2) ; yvel
+	move.w  #(GUSH_INITIAL_Y+34), 2(a2) ; y
+	move.l  (FPSVAL_M144_PXS).w, 6(a2)  ; yvel
 	move.w  (DATA_gush_move_pattern_2+6).w, 10(a2) ; ydest
-	move.b  #1, 12(a2)   ; move_pattern_index
-	clr.b   14(a2)       ; is_crack
+	move.b  #1, 12(a2) ; move_pattern_index
+	clr.b   14(a2)     ; is_crack
 
 	; Add crack particles
 	move.w  (a2), d0
@@ -1684,7 +1685,7 @@ handle_player_interactions:
 	bsr     add_crack_particles
 
 .gush_play_sfx:
-	; Play gush hit sound effect and stop processing further interactions
+	; Play hit sound effect and stop processing further interactions
 	moveq   #SFX_HIT, d0
 	bra     sound_play_sfx
 
@@ -1727,6 +1728,7 @@ handle_player_interactions:
 	cmp.w   d1, d0 ; Spring bottom
 	bgt.s   .next_spring
 
+	; Skip if the player character is moving upwards
 	tst.l   (RAM_player_yvel).w
 	blt.s   .next_spring
 
@@ -1736,6 +1738,7 @@ handle_player_interactions:
 	; Set hit spring index
 	move.b  d6, (RAM_hit_spring).w
 
+	; Start spring animation
 	lea     (RAM_anims+ANIM_HIT_SPRING).w, a0
 	move.b  #5, (a0)
 	move.b  3(a0), 2(a0) ; Set delay
@@ -1783,17 +1786,19 @@ handle_player_interactions:
 	cmp.w   d1, d0 ; Rope bottom
 	bgt.s   .next_rope
 
-	; Set grabbed rope limits
-	move.w  (a2), d0
-	move.w  d0, (RAM_grabbed_rope_xmin).w
-	addi.w  #352, d0
-	move.w  d0, (RAM_grabbed_rope_xmax).w
-
+	; Change player character's state
 	move.b  #PLAYER_STATE_GRABROPE, (RAM_player_state).w
-	move.b  d6, (RAM_grabbed_rope_index).w
-	move.w  (a2), (RAM_grabbed_rope_x).w
-	clr.w   (RAM_grabbed_rope_x+2).w
-	move.l  (FPSVAL_258_PXS).w, (RAM_grabbed_rope_xvel).w
+
+	; Make rope move
+	lea     (RAM_grabbed_rope_x).w, a0
+	move.w  (a2), d0
+	move.w  d0, (a0)+ ; RAM_grabbed_rope_x
+	clr.w   (a0)+
+	move.w  d0, (a0)+ ; RAM_grabbed_rope_xmin
+	addi.w  #352, d0
+	move.w  d0, (a0)+ ; RAM_grabbed_rope_xmax
+	move.l  (FPSVAL_258_PXS).w, (a0)+ ; RAM_grabbed_rope_xvel
+	move.b  d6, (a0)+ ; RAM_grabbed_rope_index
 
 .next_rope:
 	addq.w  #2, a2

@@ -226,9 +226,9 @@ RAM_bus_route_sign:             equ $FFFF90AE
 RAM_bus_num_characters:         equ $FFFF90AF
 
 RAM_grabbed_rope_x:             equ $FFFF90B0
-RAM_grabbed_rope_xvel:          equ $FFFF90B4
-RAM_grabbed_rope_xmin:          equ $FFFF90B8
-RAM_grabbed_rope_xmax:          equ $FFFF90BA
+RAM_grabbed_rope_xmin:          equ $FFFF90B4
+RAM_grabbed_rope_xmax:          equ $FFFF90B6
+RAM_grabbed_rope_xvel:          equ $FFFF90B8
 RAM_grabbed_rope_index:         equ $FFFF90BC
 
 RAM_passing_car_x:              equ $FFFF90C0
@@ -309,7 +309,7 @@ RAM_gushes:                     equ $FFFF9700
 ;
 ; x (L)
 ; xmax (W)
-; flags (B)
+; flags (B) - 0 = show arrow, 1 = moving, 2 = pushed
 RAM_pushable_crates:            equ $FFFF9900
 
 ; 4 entries, 16 bytes each (64 bytes in total)
