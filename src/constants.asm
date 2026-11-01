@@ -226,6 +226,11 @@ PUSHABLE_CRATE_Y:               equ 240
 PASSING_CAR_Y:                  equ 184
 HEN_Y:                          equ 224
 
+; Characters that can appear at the bus front door
+BUS_FRONT_CHAR_NONE:            equ 0
+BUS_FRONT_CHAR_PLAYER:          equ 1
+BUS_FRONT_CHAR_BEARDED_MAN:     equ 2
+
 ; Cutscene object types
 COBJ_NONE:                      equ 0
 COBJ_PLAYER_STAND:              equ 1

@@ -342,14 +342,14 @@ start_level:
 	; Set number of characters at bus rear door
 	move.b  (RAM_level_num).w, d0
 	subi.b  #2, d0
-	bge.s   .bus_num_characters_not_negative
+	bge.s   .bus_num_rear_characters_not_negative
 	moveq   #0, d0
-.bus_num_characters_not_negative:
+.bus_num_rear_characters_not_negative:
 	btst.b  #6, (RAM_play_flags).w ; Check if it is the last level
-	beq.s   .bus_num_characters_not_last_level
+	beq.s   .bus_num_rear_characters_not_last_level
 	move.b  #3, d0
-.bus_num_characters_not_last_level:
-	move.b  d0, (RAM_bus_num_characters).w
+.bus_num_rear_characters_not_last_level:
+	move.b  d0, (RAM_bus_num_rear_characters).w
 
 	move.b  #SEQ_INITIAL, (RAM_sequence_step).w
 

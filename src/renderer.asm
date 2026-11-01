@@ -2007,25 +2007,24 @@ add_play_sprites:
 	bsr     add_spritemap
 .skip_medal_3:
 
-;----------------------------------------------------------;
-; Add sprites for cutscene objects that are not in the bus ;
-;----------------------------------------------------------;
+;----------------------------------;
+; Add sprites for cutscene objects ;
+;----------------------------------;
 
 	lea     (RAM_cutscene_objs+32).w, a2
 	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
 	moveq   #(MAX_CUTSCENE_OBJECTS-1), d7
-.out_cutscene_objs_loop:
+.cutscene_objs_loop:
+	; Skip if inactive
 	tst.b   (a2)
-	beq.s   .next_out_cutscene_obj
-	tst.b   1(a2)
-	bne.s   .next_out_cutscene_obj
+	beq.s   .next_cutscene_obj
 
 	bsr     add_spritemap_cutscene_obj
 
-.next_out_cutscene_obj:
+.next_cutscene_obj:
 	lea     -32(a2), a2
 	subq.w  #8, a3
-	dbf     d7, .out_cutscene_objs_loop
+	dbf     d7, .cutscene_objs_loop
 
 ;--------------------------------;
 ; Add sprites for bus stop signs ;
@@ -2764,20 +2763,20 @@ add_play_sprites:
 ; Add sprites for the characters at the bus rear door ;
 ;-----------------------------------------------------;
 
-	; No characters to draw if the rear door is closed
+	; No characters to draw if the rear door is fully closed
 	tst.b   (RAM_anims+ANIM_BUS_DOOR_REAR).w
-	beq.s   .bus_characters_none
+	beq.s   .bus_rear_characters_none
 
 	; Determine number of characters to draw
 	moveq   #0, d0
-	move.b  (RAM_bus_num_characters).w, d0
-	beq.s   .bus_characters_none
+	move.b  (RAM_bus_num_rear_characters).w, d0
+	beq.s   .bus_rear_characters_none
 	subq.b  #1, d0
-	beq.s   .bus_characters_one
+	beq.s   .bus_rear_characters_one
 	subq.b  #1, d0
-	beq.s   .bus_characters_two
+	beq.s   .bus_rear_characters_two
 
-	; Three characters
+.bus_rear_characters_three:
 	move.w  (RAM_bus_x).w, d0
 	addi.w  #80, d0
 	move.w  #(BUS_Y+24), d1
@@ -2785,7 +2784,7 @@ add_play_sprites:
 	lea     DATA_spritemap_bus_character_3, a0
 	bsr     add_spritemap
 
-.bus_characters_two:
+.bus_rear_characters_two:
 	move.w  (RAM_bus_x).w, d0
 	addi.w  #64, d0
 	move.w  #(BUS_Y+24), d1
@@ -2793,37 +2792,48 @@ add_play_sprites:
 	lea     DATA_spritemap_bus_character_2, a0
 	bsr     add_spritemap
 
-.bus_characters_one:
+.bus_rear_characters_one:
 	move.w  (RAM_bus_x).w, d0
 	addi.w  #72, d0
 	move.w  #(BUS_Y+24), d1
 	move.w  #5, d2
 	lea     DATA_spritemap_bus_character_1, a0
 	bsr     add_spritemap
+.bus_rear_characters_none:
 
-.bus_characters_none:
+;------------------------------------------;
+; Add sprites for bus front door character ;
+;------------------------------------------;
+
+	; No character to draw if the front door is fully closed
+	tst.b   (RAM_anims+ANIM_BUS_DOOR_FRONT).w
+	beq.s   .bus_front_character_done
+
+	move.b  (RAM_bus_front_character), d1
+
+	; Skip if there is no character
+	beq.s   .bus_front_character_done
+
+	move.w  (RAM_bus_x).w, d0
+	moveq   #2, d2
+
+	subq.b  #1, d1
+	beq.s   .bus_front_character_player
+
+.bus_front_character_bearded_man:
+	addi.w  #337, d0
+	move.w  #(BUS_Y+35), d1
+	lea     DATA_spritemap_bearded_man_stand, a0
+	bra     add_spritemap
+
+.bus_front_character_player:
+	addi.w  #342, d0
+	move.w  #(BUS_Y+36), d1
+	lea     DATA_spritemap_player, a0
+	bra     add_spritemap
+
+.bus_front_character_done:
 .bus_not_visible:
-
-;------------------------------------------------------;
-; Add sprites for cutscene objects that are in the bus ;
-;------------------------------------------------------;
-
-	lea     (RAM_cutscene_objs+32).w, a2
-	lea     (RAM_anims+ANIM_CUTSCENE_OBJ_2).w, a3
-	moveq   #(MAX_CUTSCENE_OBJECTS-1), d7
-.in_cutscene_objs_loop:
-	tst.b   (a2)
-	beq.s   .next_in_cutscene_obj
-	tst.b   1(a2)
-	beq.s   .next_in_cutscene_obj
-
-	bsr.s   add_spritemap_cutscene_obj
-
-.next_in_cutscene_obj:
-	lea     -32(a2), a2
-	subq.w  #8, a3
-	dbf     d7, .in_cutscene_objs_loop
-
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -2864,12 +2874,6 @@ add_spritemap_cutscene_obj:
 	move.l  2(a2), d0
 	move.w  6(a2), d1
 
-	; Make X position relative to the bus if the object is in it
-	tst.b   1(a2)
-	beq.s   .not_in_bus
-	add.l   (RAM_bus_x).w, d0
-.not_in_bus:
-
 	; Discard fractional part of X position
 	clr.w   d0
 	swap.w  d0
@@ -2896,45 +2900,45 @@ add_spritemap_cutscene_obj:
 	bra.s   .flagman
 
 .player_stand:
-	move.w  #2, d2
+	moveq   #2, d2
 	lea     DATA_spritemap_player, a0
 	bra.s   add_spritemap
 
 .player_walk:
-	move.w  #2, d2
+	moveq   #2, d2
 	lea     DATA_spritemap_player+32, a0
 	lsl.w   #5, d3
 	adda.w  d3, a0
 	bra.s   add_spritemap
 
 .player_run:
-	move.w  #4, d2
+	moveq   #4, d2
 	lea     DATA_spritemap_player_run, a0
 	lsl.w   #6, d3
 	adda.w  d3, a0
 	bra.s   add_spritemap
 
 .player_clean_dung:
-	move.w  #4, d2
+	moveq   #4, d2
 	lea     DATA_spritemap_player_clean_dung, a0
 	lsl.w   #6, d3
 	adda.w  d3, a0
 	bra.s   add_spritemap
 
 .bearded_man_stand:
-	move.w  #2, d2
+	moveq   #2, d2
 	lea     DATA_spritemap_bearded_man_stand, a0
 	bra.s   add_spritemap
 
 .bearded_man_walk:
-	move.w  #2, d2
+	moveq   #2, d2
 	lea     DATA_spritemap_bearded_man_walk, a0
 	lsl.w   #5, d3
 	adda.w  d3, a0
 	bra.s   add_spritemap
 
 .bearded_man_jump:
-	move.w  #2, d2
+	moveq   #2, d2
 	lea     DATA_spritemap_bearded_man_jump, a0
 	bra.s   add_spritemap
 

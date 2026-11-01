@@ -223,13 +223,14 @@ RAM_bus_xvel:                   equ $FFFF90A4
 RAM_bus_acc:                    equ $FFFF90A8
 RAM_bus_init_x:                 equ $FFFF90AC
 RAM_bus_route_sign:             equ $FFFF90AE
-RAM_bus_num_characters:         equ $FFFF90AF
+RAM_bus_num_rear_characters:    equ $FFFF90AF
+RAM_bus_front_character:        equ $FFFF90B0
 
-RAM_grabbed_rope_x:             equ $FFFF90B0
-RAM_grabbed_rope_xmin:          equ $FFFF90B4
-RAM_grabbed_rope_xmax:          equ $FFFF90B6
-RAM_grabbed_rope_xvel:          equ $FFFF90B8
-RAM_grabbed_rope_index:         equ $FFFF90BC
+RAM_grabbed_rope_x:             equ $FFFF90B2
+RAM_grabbed_rope_xmin:          equ $FFFF90B6
+RAM_grabbed_rope_xmax:          equ $FFFF90B8
+RAM_grabbed_rope_xvel:          equ $FFFF90BA
+RAM_grabbed_rope_index:         equ $FFFF90BE
 
 RAM_passing_car_x:              equ $FFFF90C0
 RAM_passing_car_peel_throw_x:   equ $FFFF90C4
@@ -318,7 +319,7 @@ RAM_pushable_crate_solids:      equ $FFFF9920
 ; 2 entries, 32 bytes each (64 bytes in total), with the following properties:
 ;
 ; type (B)
-; in_bus (B)
+; unused (B)
 ; x (L)
 ; y (L)
 ; xvel (L)

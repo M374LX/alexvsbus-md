@@ -46,9 +46,10 @@ play_clear:
 	move.w  #96,  (RAM_player_x).w
 	move.w  #204, (RAM_player_y).w
 
-	; Set both to -1
-	st.b    (RAM_grabbed_rope_index).w
-	st.b    (RAM_cur_passageway).w
+	moveq   #-1, d0
+	move.b  d0, (RAM_grabbed_rope_index).w
+	move.b  d0, (RAM_hit_spring).w
+	move.b  d0, (RAM_cur_passageway).w
 
 	; Set player initial state
 	st.b    (RAM_player_old_state).w
@@ -309,19 +310,14 @@ move_bus_to_end:
 ; ------------------------------------------------------------------------------
 
 show_player_in_bus:
-	lea     (RAM_cutscene_objs).w, a0
-
-	move.b  #COBJ_PLAYER_STAND, (a0)+
-	st.b    (a0)+
-	move.w  #342, (a0)+
-	clr.w   (a0)+
-	move.w  #(BUS_Y+36), (a0)+
-	clr.w   (a0)+
+	clr.b    (RAM_cutscene_objs).w
 
 	move.b  #PLAYER_STATE_INACTIVE, (RAM_player_state).w
 
 	; Clear "visible" flag
 	bclr.b  #0, (RAM_player_flags).w
+
+	move.b  #BUS_FRONT_CHAR_PLAYER, (RAM_bus_front_character).w
 
 	rts
 
@@ -457,7 +453,7 @@ move_objects:
 	move.l  12(a0), d0
 	add.l   d0, 4(a0)
 
-	; Check if the peel had reached the limit Y position (400) or ydest
+	; Check if the peel has reached the limit Y position (400) or ydest
 	move.w  4(a0), d0
 	cmpi.w  #400, d0
 	bgt.s   .deactivate_peel
@@ -2938,7 +2934,7 @@ update_sequence:
 
 .seq_74:
 	; Hide player character
-	clr.b   (RAM_cutscene_objs).w
+	clr.b   (RAM_bus_front_character).w
 
 	; Bearded man comes from the right side of the screen
 	lea     (RAM_cutscene_objs+32).w, a0
@@ -3033,16 +3029,8 @@ update_sequence:
 	ble     .ret
 
 	; Bearded man is now in the bus
-	move.b  #COBJ_BEARDED_MAN_STAND, (a0)
-	st.b    1(a0)
-	clr.l   22(a0)
-	clr.l   14(a0)
-	move.w  d0, 6(a0)
-	clr.w   8(a0)
-
-	; Make bearded man's X position relative to the bus
-	move.l  (RAM_bus_x).w, d0
-	sub.l   d0, 2(a0)
+	clr.b   (a0)
+	move.b  #BUS_FRONT_CHAR_BEARDED_MAN, (RAM_bus_front_character).w
 
 	move.b  (FPSVAL_0_2_S).w, (RAM_sequence_delay).w
 	addq.b  #1, (RAM_sequence_step).w ; Next sequence step
