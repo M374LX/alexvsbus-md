@@ -1661,36 +1661,6 @@ add_play_sprites:
 	dbf     d7, .push_arrow_crates_loop
 
 ;-------------------------------------;
-; Add sprites for moving banana peels ;
-;-------------------------------------;
-
-	lea     (RAM_moving_peels).w, a2
-
-	; If the first peel is not moving, skip
-	cmpi.b  #-1, 24(a2)
-	beq.s   .moving_peels_second
-
-	move.w  (a2), d0
-	move.w  4(a2), d1
-	moveq   #0, d2
-	lea     DATA_spritemap_banana_peel, a0
-	bsr     add_spritemap
-
-.moving_peels_second:
-	lea     32(a2), a2
-
-	; If the second peel is not moving, skip
-	cmpi.b  #-1, 24(a2)
-	beq.s   .moving_peels_done
-
-	move.w  (a2), d0
-	move.w  4(a2), d1
-	moveq   #0, d2
-	lea     DATA_spritemap_banana_peel, a0
-	bsr     add_spritemap
-.moving_peels_done:
-
-;-------------------------------------;
 ; Add sprites for overhead sign bases ;
 ;-------------------------------------;
 
@@ -1769,60 +1739,6 @@ add_play_sprites:
 	dbf     d7, .overhead_sign_bases_loop
 .overhead_sign_bases_done:
 
-;----------------------------------------------------------;
-; Add foreground sprites for holes (including passageways) ;
-;----------------------------------------------------------;
-
-	; Number of level columns to check
-	move.w  #16-1, d7
-
-	move.w  (RAM_col24).w, d0
-
-	; Store initial column address in a5
-	movea.l (RAM_ptr_level_columns).w, a5
-	adda.w  d0, a5
-
-	; Calculate X position of the first visible level column in pixels
-	; (that is, multiply it by 24) and store the result in d0
-	move.w  d0, d1
-	add.w   d0, d0
-	add.w   d1, d0
-	lsl.w   #3, d0
-
-	; Y position of the sprites
-	move.w  #264, d1
-
-.holes_fg_loop:
-	; Extract hole type into d2
-	move.b  (a5)+, d2
-	andi.w  #$38, d2
-
-	; Determine spritemap to draw
-	cmpi.b  #(1*8), d2
-	beq.s   .holes_fg_deep_left
-	cmpi.b  #(4*8), d2
-	beq.s   .holes_fg_passageway_left
-	cmpi.b  #(6*8), d2
-	beq.s   .holes_fg_passageway_right
-	bra.s   .holes_fg_next_column
-
-.holes_fg_deep_left:
-	lea     DATA_spritemap_deep_hole_left_fg, a0
-	bra.s   .holes_fg_add_sprite
-.holes_fg_passageway_left:
-	lea     DATA_spritemap_passageway_left_fg, a0
-	bra.s   .holes_fg_add_sprite
-.holes_fg_passageway_right:
-	lea     DATA_spritemap_passageway_right_fg, a0
-
-.holes_fg_add_sprite:
-	moveq   #0, d2
-	bsr     add_spritemap
-
-.holes_fg_next_column:
-	addi.w  #24, d0
-	dbf     d7, .holes_fg_loop
-
 ;-----------------------;
 ; Add sprites for coins ;
 ;-----------------------;
@@ -1887,6 +1803,90 @@ add_play_sprites:
 	addq.w  #4, a2
 	dbf     d7, .coins_loop
 .coins_done:
+
+;-------------------------------------;
+; Add sprites for moving banana peels ;
+;-------------------------------------;
+
+	lea     (RAM_moving_peels).w, a2
+
+	; If the first peel is not moving, skip
+	cmpi.b  #-1, 24(a2)
+	beq.s   .moving_peels_second
+
+	move.w  (a2), d0
+	move.w  4(a2), d1
+	moveq   #0, d2
+	lea     DATA_spritemap_banana_peel, a0
+	bsr     add_spritemap
+
+.moving_peels_second:
+	lea     32(a2), a2
+
+	; If the second peel is not moving, skip
+	cmpi.b  #-1, 24(a2)
+	beq.s   .moving_peels_done
+
+	move.w  (a2), d0
+	move.w  4(a2), d1
+	moveq   #0, d2
+	lea     DATA_spritemap_banana_peel, a0
+	bsr     add_spritemap
+.moving_peels_done:
+
+;----------------------------------------------------------;
+; Add foreground sprites for holes (including passageways) ;
+;----------------------------------------------------------;
+
+	; Number of level columns to check
+	move.w  #16-1, d7
+
+	move.w  (RAM_col24).w, d0
+
+	; Store initial column address in a5
+	movea.l (RAM_ptr_level_columns).w, a5
+	adda.w  d0, a5
+
+	; Calculate X position of the first visible level column in pixels
+	; (that is, multiply it by 24) and store the result in d0
+	move.w  d0, d1
+	add.w   d0, d0
+	add.w   d1, d0
+	lsl.w   #3, d0
+
+	; Y position of the sprites
+	move.w  #264, d1
+
+.holes_fg_loop:
+	; Extract hole type into d2
+	move.b  (a5)+, d2
+	andi.w  #$38, d2
+
+	; Determine spritemap to draw
+	cmpi.b  #(1*8), d2
+	beq.s   .holes_fg_deep_left
+	cmpi.b  #(4*8), d2
+	beq.s   .holes_fg_passageway_left
+	cmpi.b  #(6*8), d2
+	beq.s   .holes_fg_passageway_right
+	bra.s   .holes_fg_next_column
+
+.holes_fg_deep_left:
+	lea     DATA_spritemap_deep_hole_left_fg, a0
+	bra.s   .holes_fg_add_sprite
+.holes_fg_passageway_left:
+	lea     DATA_spritemap_passageway_left_fg, a0
+	bra.s   .holes_fg_add_sprite
+.holes_fg_passageway_right:
+	lea     DATA_spritemap_passageway_right_fg, a0
+
+.holes_fg_add_sprite:
+	moveq   #0, d2
+	bsr     add_spritemap
+
+.holes_fg_next_column:
+	addi.w  #24, d0
+	dbf     d7, .holes_fg_loop
 
 ;--------------------------------------;
 ; Add sprites for the player character ;
@@ -2026,148 +2026,6 @@ add_play_sprites:
 	subq.w  #8, a3
 	dbf     d7, .cutscene_objs_loop
 
-;--------------------------------;
-; Add sprites for bus stop signs ;
-;--------------------------------;
-
-	move.w  (RAM_bus_stop_sign1_x).w, d0
-	ble.s   .no_bus_stop_sign_1
-
-	move.w  #BUS_STOP_SIGN_Y, d1
-	moveq   #2, d2
-	lea     DATA_spritemap_bus_stop_sign, a0
-	bsr     add_spritemap
-.no_bus_stop_sign_1:
-
-	move.w  (RAM_bus_stop_sign2_x).w, d0
-	ble.s   .no_bus_stop_sign_2
-
-	move.w  #BUS_STOP_SIGN_Y, d1
-	moveq   #2, d2
-	lea     DATA_spritemap_bus_stop_sign, a0
-	bsr     add_spritemap
-.no_bus_stop_sign_2:
-
-;--------------------------------------------------;
-; Add sprites for banana peels that are not moving ;
-;--------------------------------------------------;
-
-	moveq   #0, d7
-	move.b  (RAM_num_banana_peels).w, d7
-	beq.s   .banana_peels_done
-
-	lea     (RAM_banana_peels).w, a2
-	subq.b  #1, d7
-
-.banana_peels_loop:
-	; Read X position of the peel and skip it if inactive
-	move.w  (a2), d0
-	beq.s   .next_banana_peel
-
-	; If the peel is offscreen, skip it
-	sub.w   (RAM_draw_offset_x).w, d0
-	cmpi.w  #-32, d0
-	ble.s   .next_banana_peel
-	cmpi.w  #SCREEN_W, d0
-	bge.s   .next_banana_peel
-
-	move.w  (a2), d0  ; X position
-	move.w  2(a2), d1 ; Y position
-	lea     DATA_spritemap_banana_peel, a0
-	moveq   #0, d2
-	bsr     add_spritemap
-
-.next_banana_peel:
-	addq.w  #4, a2
-	dbf     d7, .banana_peels_loop
-.banana_peels_done:
-
-;---------------------------------;
-; Add sprites for pushable crates ;
-;---------------------------------;
-
-	lea     (RAM_pushable_crates).w, a2
-	moveq   #(MAX_PUSHABLE_CRATES-1), d7
-
-.pushable_crates_loop:
-	; Read X position of the crate
-	move.w  (a2), d0
-
-	; If it is zero, there are no more crates
-	beq.s   .pushable_crates_done
-
-	; If the crate is offscreen, skip it
-	sub.w   (RAM_draw_offset_x).w, d0
-	cmpi.w  #-32, d0
-	ble.s   .next_pushable_crate
-	cmpi.w  #SCREEN_W, d0
-	bge.s   .pushable_crates_done ; No more crates to draw
-
-	move.w  (a2), d0
-	move.w  #240, d1
-	lea     DATA_spritemap_crate, a0
-	moveq   #1, d2
-	bsr     add_spritemap
-
-.next_pushable_crate:
-	addq.w  #8, a2
-	dbf     d7, .pushable_crates_loop
-.pushable_crates_done:
-
-;------------------------------------------------------;
-; Add sprites for ropes (except the one being grabbed) ;
-;------------------------------------------------------;
-
-	moveq   #0, d7
-	move.b  (RAM_num_ropes).w, d7
-	beq.s   .ropes_done
-
-	movea.l (RAM_ptr_ropes).w, a2
-	subq.b  #1, d7
-
-	; Use d6 to keep track of the rope index
-	moveq   #0, d6
-
-.ropes_loop:
-	; Skip the rope being grabbed, if any
-	cmp.b   (RAM_grabbed_rope_index).w, d6
-	beq.s   .next_rope
-
-	; If the rope is offscreen, skip it
-	move.w  (a2), d0
-	sub.w   (RAM_draw_offset_x).w, d0
-	cmpi.w  #-32, d0
-	ble.s   .next_rope
-	cmpi.w  #SCREEN_W, d0
-	bge.s   .ropes_done ; No more ropes to draw
-
-	move.w  (a2), d0 ; X position
-	move.w  #(ROPE_Y+5), d1 ; Y position
-	lea     DATA_spritemap_rope_vertical, a0
-	moveq   #1, d2
-	bsr     add_spritemap
-
-.next_rope:
-	addq.w  #2, a2
-	addq.b  #1, d6
-	dbf     d7, .ropes_loop
-.ropes_done:
-
-;----------------------------------------;
-; Add sprites for the rope being grabbed ;
-;----------------------------------------;
-
-	; Skip if no rope is being grabbed
-	tst.b   (RAM_grabbed_rope_index).w
-	blt.s   .no_grabbed_rope
-
-	move.w  (RAM_grabbed_rope_x).w, d0
-	move.w  #(ROPE_Y+5), d1
-	lea     DATA_spritemap_rope_vertical, a0
-	moveq   #1, d2
-	bsr     add_spritemap
-.no_grabbed_rope:
-
 ;-------------------------;
 ; Add sprites for springs ;
 ;-------------------------;
@@ -2214,6 +2072,94 @@ add_play_sprites:
 	addq.b  #1, d6
 	dbf     d7, .springs_loop
 .springs_done:
+
+;----------------------------------------;
+; Add sprites for the rope being grabbed ;
+;----------------------------------------;
+
+	; Skip if no rope is being grabbed
+	tst.b   (RAM_grabbed_rope_index).w
+	blt.s   .no_grabbed_rope
+
+	move.w  (RAM_grabbed_rope_x).w, d0
+	move.w  #(ROPE_Y+5), d1
+	lea     DATA_spritemap_rope_vertical, a0
+	moveq   #1, d2
+	bsr     add_spritemap
+.no_grabbed_rope:
+
+;------------------------------------------------------;
+; Add sprites for ropes (except the one being grabbed) ;
+;------------------------------------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_ropes).w, d7
+	beq.s   .ropes_done
+
+	movea.l (RAM_ptr_ropes).w, a2
+	subq.b  #1, d7
+
+	; Use d6 to keep track of the rope index
+	moveq   #0, d6
+
+.ropes_loop:
+	; Skip the rope being grabbed, if any
+	cmp.b   (RAM_grabbed_rope_index).w, d6
+	beq.s   .next_rope
+
+	; If the rope is offscreen, skip it
+	move.w  (a2), d0
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_rope
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .ropes_done ; No more ropes to draw
+
+	move.w  (a2), d0 ; X position
+	move.w  #(ROPE_Y+5), d1 ; Y position
+	lea     DATA_spritemap_rope_vertical, a0
+	moveq   #1, d2
+	bsr     add_spritemap
+
+.next_rope:
+	addq.w  #2, a2
+	addq.b  #1, d6
+	dbf     d7, .ropes_loop
+.ropes_done:
+
+;--------------------------------------------------;
+; Add sprites for banana peels that are not moving ;
+;--------------------------------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_banana_peels).w, d7
+	beq.s   .banana_peels_done
+
+	lea     (RAM_banana_peels).w, a2
+	subq.b  #1, d7
+
+.banana_peels_loop:
+	; Read X position of the peel and skip it if inactive
+	move.w  (a2), d0
+	beq.s   .next_banana_peel
+
+	; If the peel is offscreen, skip it
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_banana_peel
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .next_banana_peel
+
+	move.w  (a2), d0  ; X position
+	move.w  2(a2), d1 ; Y position
+	lea     DATA_spritemap_banana_peel, a0
+	moveq   #0, d2
+	bsr     add_spritemap
+
+.next_banana_peel:
+	addq.w  #4, a2
+	dbf     d7, .banana_peels_loop
+.banana_peels_done:
 
 ;----------------------------------------;
 ; Add sprites for gushes and gush cracks ;
@@ -2375,60 +2321,37 @@ add_play_sprites:
 	dbf     d7, .overhead_signs_bg_loop
 .overhead_signs_bg_done:
 
-;---------------------------------------------;
-; Add sprites for the wheels of parked trucks ;
-;---------------------------------------------;
+;---------------------------------;
+; Add sprites for pushable crates ;
+;---------------------------------;
 
-	moveq   #0, d7
-	move.b  (RAM_num_parked_vehicles).w, d7
-	beq.s   .parked_vehicle_wheels_done
+	lea     (RAM_pushable_crates).w, a2
+	moveq   #(MAX_PUSHABLE_CRATES-1), d7
 
-	movea.l (RAM_ptr_parked_vehicles).w, a6
-	subq.w  #1, d7
+.pushable_crates_loop:
+	; Read X position of the crate
+	move.w  (a2), d0
 
-.parked_vehicle_wheels_loop:
-	move.w  (a6)+, d2 ; Get type
-	move.w  (a6)+, d3 ; Get X position (in tiles)
+	; If it is zero, there are no more crates
+	beq.s   .pushable_crates_done
 
-	; If it is not a truck, skip
-	cmpi.w  #VEH_PARKED_TRUCK, d2
-	bne.s   .parked_vehicle_wheels_next
+	; If the crate is offscreen, skip it
+	sub.w   (RAM_draw_offset_x).w, d0
+	cmpi.w  #-32, d0
+	ble.s   .next_pushable_crate
+	cmpi.w  #SCREEN_W, d0
+	bge.s   .pushable_crates_done ; No more crates to draw
 
-	; If the truck is too far to the right, there are no more parked
-	; vehicles to check
-	move.w  d3, d0
-	sub.w   (RAM_col32_tiles).w, d0
-	cmpi.w  #60, d0
-	bge.s   .parked_vehicle_wheels_done
-
-	; If the truck is too far to the left, skip to the next vehicle
-	addi.w  #35, d0
-	blt.s   .parked_vehicle_wheels_next
-
-	; Find the X position of the rear wheel
-	move.w  d3, d0
-	lsl.w   #3, d0
-	addi.w  #48, d0
-
-	lea     DATA_spritemap_truck_wheel, a2
-
-	; Y position of wheels
-	move.w  #232, d1
-
-	; Add rear wheel sprite
-	movea.l a2, a0
-	moveq   #0, d2
+	move.w  (a2), d0
+	move.w  #240, d1
+	lea     DATA_spritemap_crate, a0
+	moveq   #1, d2
 	bsr     add_spritemap
 
-	; Add front wheel sprite
-	addi.w  #176, d0
-	movea.l a2, a0
-	moveq   #0, d2
-	bsr     add_spritemap
-
-.parked_vehicle_wheels_next:
-	dbf     d7, .parked_vehicle_wheels_loop
-.parked_vehicle_wheels_done:
+.next_pushable_crate:
+	addq.w  #8, a2
+	dbf     d7, .pushable_crates_loop
+.pushable_crates_done:
 
 ;----------------------------------------------------;
 ; Add sprites for hydrants and horizontal rope edges ;
@@ -2516,6 +2439,83 @@ add_play_sprites:
 	dbf     d7, .hydrants_rope_edges_loop
 .hydrants_rope_edges_done:
 
+;--------------------------------;
+; Add sprites for bus stop signs ;
+;--------------------------------;
+
+	move.w  (RAM_bus_stop_sign1_x).w, d0
+	ble.s   .no_bus_stop_sign_1
+
+	move.w  #BUS_STOP_SIGN_Y, d1
+	moveq   #2, d2
+	lea     DATA_spritemap_bus_stop_sign, a0
+	bsr     add_spritemap
+.no_bus_stop_sign_1:
+
+	move.w  (RAM_bus_stop_sign2_x).w, d0
+	ble.s   .no_bus_stop_sign_2
+
+	move.w  #BUS_STOP_SIGN_Y, d1
+	moveq   #2, d2
+	lea     DATA_spritemap_bus_stop_sign, a0
+	bsr     add_spritemap
+.no_bus_stop_sign_2:
+
+;---------------------------------------------;
+; Add sprites for the wheels of parked trucks ;
+;---------------------------------------------;
+
+	moveq   #0, d7
+	move.b  (RAM_num_parked_vehicles).w, d7
+	beq.s   .parked_vehicle_wheels_done
+
+	movea.l (RAM_ptr_parked_vehicles).w, a6
+	subq.w  #1, d7
+
+.parked_vehicle_wheels_loop:
+	move.w  (a6)+, d2 ; Get type
+	move.w  (a6)+, d3 ; Get X position (in tiles)
+
+	; If it is not a truck, skip
+	cmpi.w  #VEH_PARKED_TRUCK, d2
+	bne.s   .parked_vehicle_wheels_next
+
+	; If the truck is too far to the right, there are no more parked
+	; vehicles to check
+	move.w  d3, d0
+	sub.w   (RAM_col32_tiles).w, d0
+	cmpi.w  #60, d0
+	bge.s   .parked_vehicle_wheels_done
+
+	; If the truck is too far to the left, skip to the next vehicle
+	addi.w  #35, d0
+	blt.s   .parked_vehicle_wheels_next
+
+	; Find the X position of the rear wheel
+	move.w  d3, d0
+	lsl.w   #3, d0
+	addi.w  #48, d0
+
+	lea     DATA_spritemap_truck_wheel, a2
+
+	; Y position of wheels
+	move.w  #232, d1
+
+	; Add rear wheel sprite
+	movea.l a2, a0
+	moveq   #0, d2
+	bsr     add_spritemap
+
+	; Add front wheel sprite
+	addi.w  #176, d0
+	movea.l a2, a0
+	moveq   #0, d2
+	bsr     add_spritemap
+
+.parked_vehicle_wheels_next:
+	dbf     d7, .parked_vehicle_wheels_loop
+.parked_vehicle_wheels_done:
+
 ;-----------------------------;
 ; Add sprites for light poles ;
 ;-----------------------------;
@@ -2541,138 +2541,6 @@ add_play_sprites:
 	lea     DATA_spritemap_light_pole, a0
 	bsr     add_spritemap
 
-;----------------------------------;
-; Add sprites for passageway exits ;
-;----------------------------------;
-
-	movea.l (RAM_ptr_passageways).w, a2
-	moveq   #0, d6 ; Current passageway index
-	moveq   #(MAX_PASSAGEWAYS-1), d7 ; Remaining passageways counter
-
-.passageways_loop:
-	; No more passageways
-	tst.w   (a2)
-	ble.s   .passageways_done
-
-	; If the passageway exit has been opened, skip to the next passageway
-	btst.b  d6, (RAM_passageway_opened_exits).w
-	bne.s   .next_passageway
-
-	; Draw passageway closed exit
-	move.w  2(a2), d0
-	subi.w  #24, d0
-	move.w  #256, d1
-	moveq   #0, d2
-	lea     DATA_spritemap_passageway_closed_exit, a0
-	bsr     add_spritemap
-
-.next_passageway:
-	addq.w  #1, d6
-	addq.w  #8, a2
-	dbf     d7, .passageways_loop
-.passageways_done:
-
-;---------------------------------;
-; Add sprites for the passing car ;
-;---------------------------------;
-
-	move.w  (RAM_passing_car_x).w, d0
-	ble.s   .no_passing_car
-
-	; Find spritemap corresponding to wheel animation frame
-	lea     DATA_spritemap_car_wheels, a2
-	tst.b   (RAM_anims+ANIM_CAR_WHEELS).w
-	beq.s   .passing_car_not_wheel_frame_2
-	addq.w  #8, a2
-.passing_car_not_wheel_frame_2:
-
-	; Draw rear wheel
-	addi.w  #24, d0
-	move.w  #(PASSING_CAR_Y+40), d1
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
-
-	; Draw front wheel
-	addi.w  #(104-24), d0
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
-
-	; Find spritemap corresponding to car color
-	moveq   #0, d0
-	move.b  (RAM_passing_car_color).w, d0
-	lsl.w   #6, d0
-	lea     DATA_spritemap_car, a0
-	adda.w  d0, a0
-
-	; Draw car body
-	move.w  (RAM_passing_car_x).w, d0
-	move.w  #PASSING_CAR_Y, d1
-	moveq   #7, d2
-	bsr     add_spritemap
-.no_passing_car:
-
-;-------------------------;
-; Add sprites for the hen ;
-;-------------------------;
-
-	tst.w   (RAM_hen_x).w
-	ble.s   .no_hen
-
-	moveq   #0, d0
-	move.b  (RAM_anims+ANIM_HEN).w, d0
-	lsl.w   #4, d0
-	lea     DATA_spritemap_hen, a0
-	adda.w  d0, a0
-
-	move.w  (RAM_hen_x).w, d0
-	move.w  #HEN_Y, d1
-	moveq   #1, d2
-	bsr     add_spritemap
-.no_hen:
-
-;--------------------------------------------;
-; Add sprites for ending sequence car wheels ;
-;--------------------------------------------;
-
-	; Skip if it is not the ending sequence
-	btst.b  #7, (RAM_play_flags).w
-	beq.s   .ending_car_wheels_done
-
-	; Find spritemap corresponding to wheel animation frame
-	lea     DATA_spritemap_car_wheels, a2
-	tst.b   (RAM_anims+ANIM_CAR_WHEELS).w
-	beq.s   .ending_cars_not_wheel_frame_2
-	addq.w  #8, a2
-.ending_cars_not_wheel_frame_2:
-
-	; Find X position of the rear wheel of the first car (calculated from
-	; the X position of the bus)
-	move.w  (RAM_bus_x).w, d0
-	addi.w  #(400+24), d0
-
-	move.w  #(PASSING_CAR_Y+40), d1
-
-	; Number of cars minus one
-	moveq   #6-1, d7
-.ending_car_wheels_loop:
-	; Rear wheel
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
-
-	; Front wheel
-	addi.w  #80, d0
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
-
-	; Next car
-	addi.w  #(32+24), d0
-	dbf     d7, .ending_car_wheels_loop
-.ending_car_wheels_done:
-
 ;-------------------------------------------------------------------;
 ; Check if the bus is visible and skip sprites related to it if not ;
 ;-------------------------------------------------------------------;
@@ -2683,33 +2551,6 @@ add_play_sprites:
 	bgt     .bus_not_visible
 	addi.w  #400, d0 ; Bus width in pixels
 	blt     .bus_not_visible
-
-;----------------------------;
-; Add sprites for bus wheels ;
-;----------------------------;
-
-	; Point a2 to current animation frame within spritemap
-	moveq   #0, d0
-	move.b  (RAM_anims+ANIM_BUS_WHEELS).w, d0
-	lsl.w   #3, d0
-	lea     DATA_spritemap_truck_wheel, a2
-	adda.w  d0, a2
-
-	; Y position of the wheels
-	move.w  #216, d1
-
-	; Add rear wheel sprite
-	move.w  (RAM_bus_x).w, d0
-	addi.w  #112, d0
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
-
-	; Add front wheel sprite
-	addi.w  #192, d0
-	moveq   #0, d2
-	movea.l a2, a0
-	bsr     add_spritemap
 
 ;---------------------------;
 ; Add sprites for bus doors ;
@@ -2741,6 +2582,33 @@ add_play_sprites:
 	addi.w  #344, d0
 	move.w  #(BUS_Y+20), d1
 	moveq   #(6-1), d2
+	bsr     add_spritemap
+
+;----------------------------;
+; Add sprites for bus wheels ;
+;----------------------------;
+
+	; Point a2 to current animation frame within spritemap
+	moveq   #0, d0
+	move.b  (RAM_anims+ANIM_BUS_WHEELS).w, d0
+	lsl.w   #3, d0
+	lea     DATA_spritemap_truck_wheel, a2
+	adda.w  d0, a2
+
+	; Y position of the wheels
+	move.w  #216, d1
+
+	; Add rear wheel sprite
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #112, d0
+	moveq   #0, d2
+	movea.l a2, a0
+	bsr     add_spritemap
+
+	; Add front wheel sprite
+	addi.w  #192, d0
+	moveq   #0, d2
+	movea.l a2, a0
 	bsr     add_spritemap
 
 ;------------------------------------;
@@ -2834,6 +2702,139 @@ add_play_sprites:
 
 .bus_front_character_done:
 .bus_not_visible:
+
+;-------------------------;
+; Add sprites for the hen ;
+;-------------------------;
+
+	tst.w   (RAM_hen_x).w
+	ble.s   .no_hen
+
+	moveq   #0, d0
+	move.b  (RAM_anims+ANIM_HEN).w, d0
+	lsl.w   #4, d0
+	lea     DATA_spritemap_hen, a0
+	adda.w  d0, a0
+
+	move.w  (RAM_hen_x).w, d0
+	move.w  #HEN_Y, d1
+	moveq   #1, d2
+	bsr     add_spritemap
+.no_hen:
+
+;---------------------------------;
+; Add sprites for the passing car ;
+;---------------------------------;
+
+	move.w  (RAM_passing_car_x).w, d0
+	ble.s   .no_passing_car
+
+	; Find spritemap corresponding to wheel animation frame
+	lea     DATA_spritemap_car_wheels, a2
+	tst.b   (RAM_anims+ANIM_CAR_WHEELS).w
+	beq.s   .passing_car_not_wheel_frame_2
+	addq.w  #8, a2
+.passing_car_not_wheel_frame_2:
+
+	; Draw rear wheel
+	addi.w  #24, d0
+	move.w  #(PASSING_CAR_Y+40), d1
+	moveq   #0, d2
+	movea.l a2, a0
+	bsr     add_spritemap
+
+	; Draw front wheel
+	addi.w  #(104-24), d0
+	moveq   #0, d2
+	movea.l a2, a0
+	bsr     add_spritemap
+
+	; Find spritemap corresponding to car color
+	moveq   #0, d0
+	move.b  (RAM_passing_car_color).w, d0
+	lsl.w   #6, d0
+	lea     DATA_spritemap_car, a0
+	adda.w  d0, a0
+
+	; Draw car body
+	move.w  (RAM_passing_car_x).w, d0
+	move.w  #PASSING_CAR_Y, d1
+	moveq   #7, d2
+	bsr     add_spritemap
+.no_passing_car:
+
+;--------------------------------------------;
+; Add sprites for ending sequence car wheels ;
+;--------------------------------------------;
+
+	; Skip if it is not the ending sequence
+	btst.b  #7, (RAM_play_flags).w
+	beq.s   .ending_car_wheels_done
+
+	; Find spritemap corresponding to wheel animation frame
+	lea     DATA_spritemap_car_wheels, a2
+	tst.b   (RAM_anims+ANIM_CAR_WHEELS).w
+	beq.s   .ending_cars_not_wheel_frame_2
+	addq.w  #8, a2
+.ending_cars_not_wheel_frame_2:
+
+	; Find X position of the rear wheel of the first car (calculated from
+	; the X position of the bus)
+	move.w  (RAM_bus_x).w, d0
+	addi.w  #(400+24), d0
+
+	move.w  #(PASSING_CAR_Y+40), d1
+
+	; Number of cars minus one
+	moveq   #6-1, d7
+.ending_car_wheels_loop:
+	; Rear wheel
+	moveq   #0, d2
+	movea.l a2, a0
+	bsr     add_spritemap
+
+	; Front wheel
+	addi.w  #80, d0
+	moveq   #0, d2
+	movea.l a2, a0
+	bsr     add_spritemap
+
+	; Next car
+	addi.w  #(32+24), d0
+	dbf     d7, .ending_car_wheels_loop
+.ending_car_wheels_done:
+
+;----------------------------------;
+; Add sprites for passageway exits ;
+;----------------------------------;
+
+	movea.l (RAM_ptr_passageways).w, a2
+	moveq   #0, d6 ; Current passageway index
+	moveq   #(MAX_PASSAGEWAYS-1), d7 ; Remaining passageways counter
+
+.passageways_loop:
+	; No more passageways
+	tst.w   (a2)
+	ble.s   .passageways_done
+
+	; If the passageway exit has been opened, skip to the next passageway
+	btst.b  d6, (RAM_passageway_opened_exits).w
+	bne.s   .next_passageway
+
+	; Draw passageway closed exit
+	move.w  2(a2), d0
+	subi.w  #24, d0
+	move.w  #256, d1
+	moveq   #0, d2
+	lea     DATA_spritemap_passageway_closed_exit, a0
+	bsr     add_spritemap
+
+.next_passageway:
+	addq.w  #1, d6
+	addq.w  #8, a2
+	dbf     d7, .passageways_loop
+.passageways_done:
+
 	rts
 
 ; ------------------------------------------------------------------------------
