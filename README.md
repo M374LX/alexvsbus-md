@@ -35,6 +35,7 @@ before it is built. With the tools in the ``tools`` directory built, the
 
 ## TODO
 
+- Code refactor (mainly renderer.asm)
 - Adapt the manual from the original C game
 - Document data formats, including levels and music streams
 - Document tools in the ``tools`` directory
